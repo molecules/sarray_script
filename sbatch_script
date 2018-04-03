@@ -1,13 +1,10 @@
 #!/bin/env perl6
 #sbatch_script
 
-subset JobName    of Str where * ~~ rx:i/^ <[-._a..z0..9]>+ $/;
-subset JobPattern of Str where * ~~ rx:i/^ <[-._a..z0..9{}]>+ $/;
-
 # job and wrap as positional parameters, the rest as named parameters
 sub MAIN (
 #= Create and run an sbatch script
-    JobName   $job,                           #= Job name (only alphanumeric, dash, or underscore allowed)
+    Str       $job,                           #= Job name (only alphanumeric, dash, or underscore allowed)
     Str       $wrap,                          #= Command to execute
     Int      :$cpu=1,                         #= Number of cores to use . default: 1
     Str      :$mem='10G',                     #= Total RAM to allocate. . default: "10G"
