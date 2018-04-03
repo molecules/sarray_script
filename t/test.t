@@ -31,32 +31,39 @@ my $test1 = start { # Check what happens with waiting on timed out job
     rmdir $timed_out_test_dir; 
 };
 
-# { # Test sarray
+# my $test2 = start { # Test paired files
+#     my $paired_test_dir = 'paired_test.dir';
+#     mkdir $paired_test_dir;
 # 
-#     shell 'for i in `seq 1 100`; do touch file_${i}_R1_001.fastq; touch file_${i}_R2_001.fastq; done';
+#     indir( $paired_test_dir, {
 # 
-#     # Create files
-#     my $file1              = file_for 'file1';
-#     my $file2              = file_for 'file2';
-#     my $expected_file_name = file_for 'expected';
-#     
-#     my $job = 'test_job';
-#     my $out = 'result.out';
-#     
-#     my $raw_job_id = qqx{ ../sbatch_script $job 'cat $file1 $file2 > $out'};
-#     my $job_id     = get_jobid($raw_job_id);
-#     my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
-#     
-#     my $result   = slurp $out;
-#     my $expected = slurp $expected_file_name;
-#     
-#     is $result, $expected, 'Yes, it worked!'; 
+#         my @files1;
+#         my @files2;
 # 
-#     unlink $file1, $file2, $expected_file_name, $out; 
-#     shell "rm -rf wait* job_files.dir $job.*";
-# }
+#         for 11 .. 12 -> $i {
+#             @files1.append(file_for('fastq1', :filename("file_{$i}_R1_001.fastq")));    
+#             @files2.append(file_for('fastq2', :filename("file_{$i}_R2_001.fastq")));    
+#         }
+# 
+#         my $job = 'test_job';
+#         
+#         my $raw_job_id = qqx{ ../../sbatch_script --sarray-file-pattern='_R1_001.fastq$' --sarray-paired-file-pattern='_R2_001.fastq$' get_seqs 'awk "{if (FNR % 4 == 2) print}" $FILE > forward.\$SLURM_ARRAY_TASK_ID.seqs; awk "{if (FNR % 4 == 2) print}" $FILE > forward.\$SLURM_ARRAY_TASK_ID.seqs; '};
+#         my $job_id     = get_jobid($raw_job_id);
+#         my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
+#         
+#         for 0 .. 1 {
+#             my $expected1 = 
+#         
+#         }
+#         my $result   = slurp $out;
+#         
+#         is $result, text_for('$expected, 'Yes, it worked!'; 
+# 
+#         shell 'rm -rf *';
+#     });
+# };
 
-my $test2 = start { # Test basic 
+my $test3 = start { # Test basic 
 
     my $basic_test_dir = 'basic_test.dir';
     mkdir $basic_test_dir;
@@ -65,7 +72,6 @@ my $test2 = start { # Test basic
         # Create files
         my $file1              = file_for 'file1';
         my $file2              = file_for 'file2';
-        my $expected_file_name = file_for 'expected';
         
         my $job = 'test_job';
         my $out = 'result.out';
@@ -75,49 +81,82 @@ my $test2 = start { # Test basic
         my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
         
         my $result   = slurp $out;
-        my $expected = slurp $expected_file_name;
         
-        is $result, $expected, 'Yes, it worked!'; 
+        is $result, text_for('expected'), 'Yes, it worked!'; 
     
-        unlink $file1, $file2, $expected_file_name, $out; 
+        unlink $file1, $file2, $out; 
         shell "rm -rf wait* job_files.dir $job.*";
     });
 
     rmdir $basic_test_dir; 
 };
 
-await($test1, $test2);
+await($test1, $test3);
 
 done-testing;
 
-sub file_for ($section) {
+sub text_for ($section) {
     my %text_for = %(
         file1 => q:to/END/,
-        TATGACCTTC
-        TCACCAATCC
-        GTAAGCACTG
-        END
+                 TATGACCTTC
+                 TCACCAATCC
+                 GTAAGCACTG
+                 END
 
         file2 => q:to/END/,
-        CCATTGGAAA
-        TAGCACGTTA
-        TATAAATAAG
-        END
+                 CCATTGGAAA
+                 TAGCACGTTA
+                 TATAAATAAG
+                 END
 
         expected => q:to/END/,
-        TATGACCTTC
-        TCACCAATCC
-        GTAAGCACTG
-        CCATTGGAAA
-        TAGCACGTTA
-        TATAAATAAG
-        END
+                    TATGACCTTC
+                    TCACCAATCC
+                    GTAAGCACTG
+                    CCATTGGAAA
+                    TAGCACGTTA
+                    TATAAATAAG
+                    END
+
+        fastq1 => q:to/END/,
+                  @0
+                  GAGGCCGGAG
+                  +
+                  EJEGJEIIJF
+                  @1
+                  GCGTTCCTTA
+                  +
+                  IJFEEIJEGJ
+                  END
+
+        fastq2 => q:to/END/,
+                  @0
+                  CAGTATTCGAGCG
+                  +
+                  GIEIFHGFHEFFH
+                  @1
+                  CCGGAAGAAGGTC
+                  +
+                  HHFJJGIJJJJFE
+                  END
+        expected_seq1 => q:to/END/,
+                  GAGGCCGGAG
+                  GCGTTCCTTA
+                  END
+        expected_seq2 => q:to/END/,
+                  CAGTATTCGAGCG
+                  CCGGAAGAAGGTC
+                  END
     );
 
-    my $filename = "$section.txt";
     my $text = %text_for{$section};
 
-    spurt $filename, %text_for{$section};
+    return $text;
+}
+
+sub file_for ($section, :$filename="$section.txt") {
+    my $text = text_for($section);
+    spurt $filename, $text;
     return $filename;
 }
 

@@ -2,7 +2,7 @@
 "perl"         : "6.c",
 "name"         : "sbatch_script",
 "license"      : "Artistic-2.0",
-"version"      : "0.0.5",
+"version"      : "0.0.6",
 "auth"         : "github:molecules",
 "authors"      : ["Chrisotpher Bottoms"],
 "description"  : "Create sbatch scripts from the command line",
