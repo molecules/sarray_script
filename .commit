@@ -1,0 +1,88 @@
+#!/bin/env perl6
+
+my $META-FILE = "META6.json";
+
+my $DEBUG;
+
+sub MAIN ( $message, :$debug=0, :$zef=False ) {
+    $DEBUG = $debug;
+
+    my $version = get-and-update-version-in-meta;
+
+    debug "Version: $version";
+
+    my $readme = slurp 'README_template.md';
+
+    $readme ~~ s/'VERSION-PLACEHOLDER'/$version/;
+
+    my $changes = "$version: $message\n" ~ slurp "CHANGES";
+
+
+    $readme ~= $changes;
+
+    verbose $readme;
+
+    spurt('CHANGES', $changes)      unless $DEBUG;
+    shell 'git add CHANGES'         unless $DEBUG;
+    spurt('README.md', $readme)     unless $DEBUG;
+    shell 'git add README.md'       unless $DEBUG;
+
+    # Commit staged changes
+    my $git-command = "git commit -m '$message ({:$version.gist})'";
+
+    debug $git-command;
+    shell "$git-command" unless $DEBUG;
+
+    if $zef { shell 'zef install .' }
+}
+
+sub get-and-update-version-in-meta ( --> Str ) {
+
+    # Bump version in META
+    my $old-meta = slurp $META-FILE;
+    my $new-meta;
+    my $version;
+    for $old-meta.lines {
+        if /('"version"      : "') (\d+) '.' (\d+) '.' (\d+) / {
+
+            my $beginning-of-line = $0;
+            my $major = $1;
+            my $minor = $2;
+            my $bug   = $3.Int;
+
+            # Increment bug version
+            $bug++;
+
+            $version = "$major.$minor.$bug";
+            $new-meta ~= "$beginning-of-line$version" ~ '",' ~ "\n";
+        }
+        # Skip blank lines
+        elsif /^ \s* $/ { next }
+        else {
+            $new-meta ~= "$_\n";
+        }
+    }
+
+    verbose "New $META-FILE:\n$new-meta";
+
+    spurt $META-FILE, $new-meta unless $DEBUG;
+    shell "git add $META-FILE"  unless $DEBUG;
+
+    return $version;
+}
+
+sub debug ($message) {
+    if $DEBUG {
+        put '=' x 30;
+        put $message;
+        put '-' x 30;
+    }
+}
+
+sub verbose ($message) {
+    if $DEBUG > 1 {
+        put '=' x 30;
+        put $message;
+        put '-' x 30;
+    }
+}

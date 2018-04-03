@@ -16,7 +16,7 @@ SLURM helper utility for creating sbatch scripts from the command line.
 
 # Version
 
-0.0.3
+0.0.4
 
 # Dependencies:  
 
@@ -28,4 +28,5 @@ SLURM
 
 # CHANGES
 
+0.0.4: Adding repository management tools .add and .commit (optional)
 0.0.3: Now creating README from template

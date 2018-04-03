@@ -1,0 +1,6 @@
+#!/bin/env perl6
+
+sub MAIN ($message, $filename) {
+    shell "git add $filename";
+    shell "./.commit '$message'";
+}
