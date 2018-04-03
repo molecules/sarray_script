@@ -1,4 +1,4 @@
 # sbatch_script
 
 ## Description
-Create sbatch scripts from command line
+SLURM helper utility for creating sbatch scripts from the command line.
