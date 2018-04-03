@@ -89,8 +89,8 @@ sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$
 
         #WARNING: Below is actually body, not header
         $header ~= 'FILES=(`echo "' 
-                 ~ @filenames.join(' ') 
-                 ~ '" | xargs -n1 | sort | xargs`)'
+                 ~ @filenames.sort.join(' ') 
+                 ~ '"`)'
                  ~ "\n\n";
 
         $header ~= 'FILE=${FILES[$SLURM_ARRAY_TASK_ID]}' ~ "\n";
@@ -116,8 +116,8 @@ sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$
 
             #WARNING: Below is actually body, not header
             $header ~= 'PAIRED_FILES=(`echo "' 
-                     ~ @paired-filenames.join(' ') 
-                     ~ '" | xargs -n1 | sort | xargs`)'
+                     ~ @paired-filenames.sort.join(' ') 
+                     ~ '"`)'
                      ~ "\n\n";
             $header ~= 'PAIRED_FILE=${PAIRED_FILES[$SLURM_ARRAY_TASK_ID]}' ~ "\n";
         }
