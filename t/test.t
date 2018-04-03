@@ -23,7 +23,7 @@ my $test1 = start { # Check what happens with waiting on timed out job
         
         my $result = $out.IO.e;
         
-        is $result, False, 'Timeout kills waiting process';
+        is $result, False, 'Timeout correctly killed waiting process';
 
         shell "rm -rf *";
     });
@@ -31,37 +31,39 @@ my $test1 = start { # Check what happens with waiting on timed out job
     rmdir $timed_out_test_dir; 
 };
 
-# my $test2 = start { # Test paired files
-#     my $paired_test_dir = 'paired_test.dir';
-#     mkdir $paired_test_dir;
-# 
-#     indir( $paired_test_dir, {
-# 
-#         my @files1;
-#         my @files2;
-# 
-#         for 11 .. 12 -> $i {
-#             @files1.append(file_for('fastq1', :filename("file_{$i}_R1_001.fastq")));    
-#             @files2.append(file_for('fastq2', :filename("file_{$i}_R2_001.fastq")));    
-#         }
-# 
-#         my $job = 'test_job';
-#         
-#         my $raw_job_id = qqx{ ../../sbatch_script --sarray-file-pattern='_R1_001.fastq$' --sarray-paired-file-pattern='_R2_001.fastq$' get_seqs 'awk "{if (FNR % 4 == 2) print}" $FILE > forward.\$SLURM_ARRAY_TASK_ID.seqs; awk "{if (FNR % 4 == 2) print}" $FILE > forward.\$SLURM_ARRAY_TASK_ID.seqs; '};
-#         my $job_id     = get_jobid($raw_job_id);
-#         my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
-#         
-#         for 0 .. 1 {
-#             my $expected1 = 
-#         
-#         }
-#         my $result   = slurp $out;
-#         
-#         is $result, text_for('$expected, 'Yes, it worked!'; 
-# 
-#         shell 'rm -rf *';
-#     });
-# };
+my $test2 = start { # Test paired files
+    my $paired_test_dir = 'paired_test.dir';
+    mkdir $paired_test_dir;
+
+    indir( $paired_test_dir, {
+
+        my @files1;
+        my @files2;
+
+        for 11 .. 12 -> $i {
+            @files1.append(file_for('fastq1', :filename("file_{$i}_R1_001.fastq")));    
+            @files2.append(file_for('fastq2', :filename("file_{$i}_R2_001.fastq")));    
+        }
+
+        my $job = 'test_job';
+        
+        my $raw_job_id = qx{ ../../sbatch_script --sarray-file-pattern='_R1_001.fastq$' --sarray-paired-file-pattern='_R2_001.fastq$' get_seqs 'awk "\{if (FNR % 4 == 2) print\}" $FILE > forward.$SLURM_ARRAY_TASK_ID.seqs; awk "\{if (FNR % 4 == 2) print\}" $PAIRED_FILE > reverse.$SLURM_ARRAY_TASK_ID.seqs; '};
+        my $job_id     = get_jobid($raw_job_id);
+        my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
+        
+        for 0 .. 1 -> $i {
+            my $result1   = slurp "forward.$i.seqs";
+            my $result2   = slurp "reverse.$i.seqs";
+            my $expected1 = text_for('expected_seq1');
+            my $expected2 = text_for('expected_seq2');
+            is $result1, $expected1, 'Good results for ' ~   '$FILE when SLURM_ARRAY_TASK_ID=' ~ $i;
+            is $result2, $expected2, 'Good results for $PAIRED-FILE when SLURM_ARRAY_TASK_ID=' ~ $i;
+        }
+
+        shell 'rm -rf *';
+    });
+    rmdir $paired_test_dir;
+};
 
 my $test3 = start { # Test basic 
 
@@ -82,7 +84,7 @@ my $test3 = start { # Test basic
         
         my $result   = slurp $out;
         
-        is $result, text_for('expected'), 'Yes, it worked!'; 
+        is $result, text_for('expected'), 'basic use works'; 
     
         unlink $file1, $file2, $out; 
         shell "rm -rf wait* job_files.dir $job.*";
@@ -91,7 +93,7 @@ my $test3 = start { # Test basic
     rmdir $basic_test_dir; 
 };
 
-await($test1, $test3);
+await($test1, $test2, $test3);
 
 done-testing;
 
