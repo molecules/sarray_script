@@ -4,28 +4,32 @@ use Test;
 
 chdir 't';
 
-{ # Check what happens with waiting on timed out job
+my $test1 = start { # Check what happens with waiting on timed out job
+    my $timed_out_test_dir = 'timed_out_test.dir';
+    mkdir $timed_out_test_dir;
 
-    # Create files
-    my $file1              = file_for 'file1';
-    my $file2              = file_for 'file2';
+    indir( $timed_out_test_dir, {
+        # Create files
+        my $file1              = file_for 'file1';
+        my $file2              = file_for 'file2';
+        my $expected_file_name = file_for 'expected';
+        
+        my $job = 'test_job';
+        my $out = 'result.out';
+        
+        my $raw_job_id = qqx{ ../../sbatch_script --time=0:00:10 $job 'sleep 300; cat $file1 $file2 > $out'};
+        my $job_id     = get_jobid($raw_job_id);
+        my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
+        
+        my $result = $out.IO.e;
+        
+        is $result, False, 'Timeout kills waiting process';
 
-    my $expected_file_name = file_for 'expected';
-    
-    my $job = 'test_job';
-    my $out = 'result.out';
-    
-    my $raw_job_id = qqx{ ../sbatch_script --time=0:00:10 $job 'sleep 300; cat $file1 $file2 > $out'};
-    my $job_id     = get_jobid($raw_job_id);
-    my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
-    
-    my $result = $out.IO.e;
-    
-    is $result, False, 'Timeout kills waiting process';
+        shell "rm -rf *";
+    });
 
-    unlink $file1, $file2, $expected_file_name, $out; 
-    shell "rm -rf wait* job_files.dir $job.*";
-}
+    rmdir $timed_out_test_dir; 
+};
 
 # { # Test sarray
 # 
@@ -52,27 +56,37 @@ chdir 't';
 #     shell "rm -rf wait* job_files.dir $job.*";
 # }
 
-{ # Test basic 
-    # Create files
-    my $file1              = file_for 'file1';
-    my $file2              = file_for 'file2';
-    my $expected_file_name = file_for 'expected';
-    
-    my $job = 'test_job';
-    my $out = 'result.out';
-    
-    my $raw_job_id = qqx{ ../sbatch_script $job 'cat $file1 $file2 > $out'};
-    my $job_id     = get_jobid($raw_job_id);
-    my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
-    
-    my $result   = slurp $out;
-    my $expected = slurp $expected_file_name;
-    
-    is $result, $expected, 'Yes, it worked!'; 
+my $test2 = start { # Test basic 
 
-    unlink $file1, $file2, $expected_file_name, $out; 
-    shell "rm -rf wait* job_files.dir $job.*";
-}
+    my $basic_test_dir = 'basic_test.dir';
+    mkdir $basic_test_dir;
+
+    indir( $basic_test_dir, {
+        # Create files
+        my $file1              = file_for 'file1';
+        my $file2              = file_for 'file2';
+        my $expected_file_name = file_for 'expected';
+        
+        my $job = 'test_job';
+        my $out = 'result.out';
+        
+        my $raw_job_id = qqx{ ../../sbatch_script $job 'cat $file1 $file2 > $out'};
+        my $job_id     = get_jobid($raw_job_id);
+        my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
+        
+        my $result   = slurp $out;
+        my $expected = slurp $expected_file_name;
+        
+        is $result, $expected, 'Yes, it worked!'; 
+    
+        unlink $file1, $file2, $expected_file_name, $out; 
+        shell "rm -rf wait* job_files.dir $job.*";
+    });
+
+    rmdir $basic_test_dir; 
+};
+
+await($test1, $test2);
 
 done-testing;
 
