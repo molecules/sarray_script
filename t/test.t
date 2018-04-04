@@ -17,7 +17,7 @@ my $test1 = start { # Check what happens with waiting on timed out job
         my $job = 'test_job';
         my $out = 'result.out';
         
-        my $raw_job_id = qqx{ ../../sbatch_script --time=0:00:10 $job 'sleep 300; cat $file1 $file2 > $out'};
+        my $raw_job_id = qqx{ ../../bin/sbatch_script --time=0:00:10 $job 'sleep 300; cat $file1 $file2 > $out'};
         my $job_id     = get_jobid($raw_job_id);
         my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
         
@@ -47,7 +47,7 @@ my $test2 = start { # Test paired files
 
         my $job = 'test_job';
         
-        my $raw_job_id = qx{ ../../sbatch_script --sarray-file-pattern='_R1_001.fastq$' --sarray-paired-file-pattern='_R2_001.fastq$' get_seqs 'awk "\{if (FNR % 4 == 2) print\}" $FILE > forward.$SLURM_ARRAY_TASK_ID.seqs; awk "\{if (FNR % 4 == 2) print\}" $PAIRED_FILE > reverse.$SLURM_ARRAY_TASK_ID.seqs; '};
+        my $raw_job_id = qx{ ../../bin/sbatch_script --sarray-file-pattern='_R1_001.fastq$' --sarray-paired-file-pattern='_R2_001.fastq$' get_seqs 'awk "\{if (FNR % 4 == 2) print\}" $FILE > forward.$SLURM_ARRAY_TASK_ID.seqs; awk "\{if (FNR % 4 == 2) print\}" $PAIRED_FILE > reverse.$SLURM_ARRAY_TASK_ID.seqs; '};
         my $job_id     = get_jobid($raw_job_id);
         my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
         
@@ -78,7 +78,7 @@ my $test3 = start { # Test basic
         my $job = 'test_job';
         my $out = 'result.out';
         
-        my $raw_job_id = qqx{ ../../sbatch_script $job 'cat $file1 $file2 > $out'};
+        my $raw_job_id = qqx{ ../../bin/sbatch_script $job 'cat $file1 $file2 > $out'};
         my $job_id     = get_jobid($raw_job_id);
         my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
         
