@@ -15,7 +15,7 @@ sub MAIN ( $message, :$debug=0, :$zef=False ) {
 
     $readme ~~ s/'VERSION-PLACEHOLDER'/$version/;
 
-    my $changes = "$version: $message\n" ~ slurp "CHANGES";
+    my $changes = "$version: $message  \n" ~ slurp "CHANGES";
 
 
     $readme ~= $changes;

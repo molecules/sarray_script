@@ -1,8 +1,9 @@
-0.0.9: no longer has hard coded default partition
-0.0.8: Now testing use of paired files
-0.0.7: file names are sorted before creating sbatch script
-0.0.6: test tweaks
-0.0.5: removed cruft
-0.0.4: Adding repository management tools .add and .commit (optional)
-0.0.3: Now creating README from template
-0.0.2: Parallel tests!
+0.0.10: added link to slurm in README  
+0.0.9: no longer has hard coded default partition  
+0.0.8: Now testing use of paired files  
+0.0.7: file names are sorted before creating sbatch script  
+0.0.6: test tweaks  
+0.0.5: removed cruft  
+0.0.4: Adding repository management tools .add and .commit (optional)  
+0.0.3: Now creating README from template  
+0.0.2: Parallel tests!  

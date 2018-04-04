@@ -2,7 +2,7 @@
 
 ## Description
 
-SLURM helper utility for creating sbatch scripts from the command line.
+SLURM helper utility for creating sbatch scripts from the command line.  
 
 ## Synopsis
 
@@ -24,7 +24,7 @@ Linux operating system (tested on CentOS 7)
 
 Rakudo Star 2017.10 or later (https://perl6.org/downloads/)  
 
-SLURM 
+slurm (https://slurm.schedmd.com/)  
 
 # CHANGES
 
