@@ -14,9 +14,15 @@ SLURM helper utility for creating sbatch scripts from the command line.
     # Get sequence headers from each FASTQ file
     sbatch_script --sarray-file-pattern='.fastq.gz$' get_headers 'zcat $FILE | awk "{if (FNR % 4 == 1) print}" > $FILE.headers'
 
+## Details
+
+    $FILE            (available if using --sarray-file-pattern)
+    $PAIRED_FILE     (available if using --sarray-paired-file-pattern)
+    $FILENAME_PREFIX (available if using --sarray-paired-file-pattern)
+
 # Version
 
-0.0.12
+0.0.13
 
 # Dependencies:  
 
@@ -28,6 +34,7 @@ slurm (https://slurm.schedmd.com/)
 
 # CHANGES
 
+0.0.13: Now extracting common prefixes of paired file names.  
 0.0.12: updated tests to use new bin/ location for sbatch_script  
 0.0.11: moved script to bin/ directory so that it will be installed properly  
 0.0.10: added link to slurm in README  

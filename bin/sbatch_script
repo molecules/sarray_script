@@ -80,26 +80,26 @@ sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$
 
     if $sarray-file-pattern {
 
-        my @filenames = dir(test => / ( <$sarray-file-pattern> ) /);
+        my @filenames = sorted-filenames-matching($sarray-file-pattern);
 
         my $generated-sarray = '0-' ~ @filenames.end;
         $header ~= "#SBATCH --array=$generated-sarray\n";
 
         #WARNING: Below is actually body, not header
-        $header ~= 'FILES=(`echo "' 
-                 ~ @filenames.sort.join(' ') 
-                 ~ '"`)'
+        $header ~= 'FILES=('
+                 ~ @filenames.join(' ')
+                 ~ ')'
                  ~ "\n\n";
 
         $header ~= 'FILE=${FILES[$SLURM_ARRAY_TASK_ID]}' ~ "\n";
 
         # If paired, check that there are equal numbers of paired files
         if $sarray-paired-file-pattern {
-            my @paired-filenames = dir(test => / ( <$sarray-paired-file-pattern> ) /);
+            my @paired-filenames = sorted-filenames-matching($sarray-paired-file-pattern);
 
             if @paired-filenames.elems != @filenames.elems {
-                note "Number of paired filenames is not equal to number of regular filenames"; 
-                my $max-index = max @filenames.end, @paired-filenames.end;  
+                note "Number of paired filenames is not equal to number of regular filenames";
+                my $max-index = max @filenames.end, @paired-filenames.end;
 
                 note "File name (paired file name):";
                 for 0 .. $max-index -> $index {
@@ -113,11 +113,25 @@ sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$
             }
 
             #WARNING: Below is actually body, not header
-            $header ~= 'PAIRED_FILES=(`echo "' 
-                     ~ @paired-filenames.sort.join(' ') 
-                     ~ '"`)'
+            $header ~= 'PAIRED_FILES=('
+                     ~ @paired-filenames.join(' ')
+                     ~ ')'
                      ~ "\n\n";
             $header ~= 'PAIRED_FILE=${PAIRED_FILES[$SLURM_ARRAY_TASK_ID]}' ~ "\n";
+
+            my @filename-prefixes;
+
+            for (@filenames Z @paired-filenames).flat -> $file, $paired-file {
+                my $prefix = common-prefix-for($file, $paired-file);
+                @filename-prefixes.append($prefix);
+            }
+
+            #WARNING: Below is actually body, not header
+            $header ~= 'FILENAME_PREFIXES=('
+                     ~ @filename-prefixes.join(' ')
+                     ~ ')'
+                     ~ "\n\n";
+            $header ~= 'FILENAME_PREFIX=${FILENAME_PREFIXES[$SLURM_ARRAY_TASK_ID]}' ~ "\n";
         }
     }
 
@@ -129,6 +143,10 @@ sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$
         END
 
     return $header;
+}
+
+sub sorted-filenames-matching ($pattern) {
+    return dir(test => / (<$pattern>) / ).sort;
 }
 
 sub replace_nonword_characters ( $name is copy)  # copies can be modified within a subroutine
@@ -153,4 +171,16 @@ sub job_script_name_for ( $job )
     }
 
     return $script_name;
+}
+
+sub common-prefix-for ($a, $b) {
+    my $current-substring = $a.substr(0,1);
+    my $longest-substring;
+
+    while $b.starts-with($current-substring) {
+        $longest-substring = $current-substring;
+        $current-substring = $a.substr(0,$++);
+    }
+
+    return $longest-substring;
 }

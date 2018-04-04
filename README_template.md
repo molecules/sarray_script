@@ -14,6 +14,12 @@ SLURM helper utility for creating sbatch scripts from the command line.
     # Get sequence headers from each FASTQ file
     sbatch_script --sarray-file-pattern='.fastq.gz$' get_headers 'zcat $FILE | awk "{if (FNR % 4 == 1) print}" > $FILE.headers'
 
+## Details
+
+    $FILE            (available if using --sarray-file-pattern)
+    $PAIRED_FILE     (available if using --sarray-paired-file-pattern)
+    $FILENAME_PREFIX (available if using --sarray-paired-file-pattern)
+
 # Version
 
 VERSION-PLACEHOLDER
