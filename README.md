@@ -16,7 +16,7 @@ SLURM helper utility for creating sbatch scripts from the command line.
 
 # Version
 
-0.0.10
+0.0.11
 
 # Dependencies:  
 
@@ -28,6 +28,7 @@ slurm (https://slurm.schedmd.com/)
 
 # CHANGES
 
+0.0.11: moved script to bin/ directory so that it will be installed properly  
 0.0.10: added link to slurm in README  
 0.0.9: no longer has hard coded default partition  
 0.0.8: Now testing use of paired files  
