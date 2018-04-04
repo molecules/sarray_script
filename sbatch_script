@@ -9,7 +9,7 @@ sub MAIN (
     Int      :$cpu=1,                         #= Number of cores to use . default: 1
     Str      :$mem='10G',                     #= Total RAM to allocate. . default: "10G"
     Str      :$time='1-0:00:00',              #= Time limit . . . . . . . default: "1-0:00:00", meaning 1 day, 0 hours, 00 minutes, 00 seconds
-    Str      :$partition='BioCompute',        #= partition to use . . . . default: "BioCompute"
+    Str      :$partition,                     #= partition to use
     Str      :$job-files-dir='job_files.dir', #= job log directory. . . . default: "job_files.dir"
     Str      :$dependency,                    #= list of jobs that must finish before this one starts
     Str      :$sarray-file-pattern,           #= Pattern of files to include in sarray
@@ -60,7 +60,6 @@ sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$
     my $header = qq:heredoc/END/;
         #!/bin/env bash
         #SBATCH -J $job
-        #SBATCH --partition $partition
         #SBATCH --mem $mem
         #SBATCH --cpus-per-task $cpu
         #SBATCH --ntasks 1
@@ -68,9 +67,8 @@ sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$
         #SBATCH --time $time
         END
 
-    if $dependency {
-        $header ~= "#SBATCH --dependency $dependency\n";
-    }
+    $header ~= "#SBATCH --partition  $partition\n"  if $partition;
+    $header ~= "#SBATCH --dependency $dependency\n" if $dependency;
 
     # Job file names
     if $sarray-file-pattern {

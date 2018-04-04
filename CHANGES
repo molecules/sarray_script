@@ -1,3 +1,4 @@
+0.0.9: no longer has hard coded default partition
 0.0.8: Now testing use of paired files
 0.0.7: file names are sorted before creating sbatch script
 0.0.6: test tweaks
