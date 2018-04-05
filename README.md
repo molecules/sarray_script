@@ -2,7 +2,7 @@
 
 ## Description
 
-slurm helper utility for creating sbatch scripts from the command line.  
+SLURM helper utility for creating sbatch scripts from the command line.  
 
 ## Synopsis
 
