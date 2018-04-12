@@ -1,4 +1,4 @@
-#!/bin/env perl6
+#!/storage/htc/biocompute/ircf/apps/rakudo-star/rakudo-star-2018.01/install/bin/perl6
 #sbatch_script
 
 # job and wrap as positional parameters, the rest as named parameters
@@ -12,8 +12,8 @@ sub MAIN (
     Str      :$partition,                     #= partition to use
     Str      :$job-files-dir='job_files.dir', #= job log directory. . . . default: "job_files.dir"
     Str      :$dependency,                    #= list of jobs that must finish before this one starts
-    Str      :$sarray-file-pattern,           #= Pattern of files to include in sarray
-    Str      :$sarray-paired-file-pattern,    #= Pattern of paired files to include in sarray
+    Str      :$sarray-file-pattern,           #= Pattern of files to include in sarray (use $FILE in your script to refer to a file)
+    Str      :$sarray-paired-file-pattern,    #= Pattern of paired files to include in sarray (use $PAIRED_FILE in your script to refer to a paired file)
     Bool     :$script-only=False,             #= Create the script, but don't run it
 )
 {
