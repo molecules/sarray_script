@@ -15,6 +15,7 @@ sub MAIN (
     Str      :$sarray-file-pattern,           #= Pattern of files to include in sarray (use $FILE in your script to refer to a file)
     Str      :$sarray-paired-file-pattern,    #= Pattern of paired files to include in sarray (use $PAIRED_FILE in your script to refer to a paired file)
     Bool     :$script-only=False,             #= Create the script, but don't run it
+    Bool     :$sarray-limit,                  #= Number of simultaneous jobs to allow to run at the same time
 )
 {
 
@@ -26,7 +27,7 @@ sub MAIN (
 
     mkdir $job-files-dir;
     my $job_script_name = job_script_name_for($job);
-    my $batch_code      = batch_code(:$mem, :$cpu, :$wrap, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$sarray-file-pattern, :$sarray-paired-file-pattern);
+    my $batch_code      = batch_code(:$mem, :$cpu, :$wrap, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$sarray-file-pattern, :$sarray-paired-file-pattern, :$sarray-limit);
 
     # Write batch file
     spurt($job_script_name, $batch_code);
@@ -39,10 +40,10 @@ sub MAIN (
 }
 
 # Create the text for a batch script
-sub batch_code ( :$wrap, :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$sarray-file-pattern, :$sarray-paired-file-pattern)
+sub batch_code ( :$wrap, :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$sarray-file-pattern, :$sarray-paired-file-pattern, :$sarray-limit)
 {
     # Create batch header
-    my $header = batch_header( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$sarray-file-pattern, :$sarray-paired-file-pattern);
+    my $header = batch_header( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$sarray-file-pattern, :$sarray-paired-file-pattern, :$sarray-limit);
 
     # Add body to code
     my $code = "$header\n";
@@ -55,7 +56,7 @@ sub batch_code ( :$wrap, :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-d
     return $code;
 }
 
-sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$sarray-file-pattern, :$sarray-paired-file-pattern )
+sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$sarray-file-pattern, :$sarray-paired-file-pattern, :$sarray-limit )
 {
     my $header = qq:heredoc/END/;
         #!/bin/env bash
@@ -83,6 +84,7 @@ sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$
         my @filenames = sorted-filenames-matching($sarray-file-pattern);
 
         my $generated-sarray = '0-' ~ @filenames.end;
+        $generated-sarray ~= '%' ~ $sarray-limit if $sarray-limit; 
         $header ~= "#SBATCH --array=$generated-sarray\n";
 
         #WARNING: Below is actually body, not header
