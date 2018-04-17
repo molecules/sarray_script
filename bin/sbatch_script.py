@@ -7,6 +7,8 @@ import argparse
 import sys
 import pathlib
 import re
+import os
+import glob
 
 def common_prefix_for (a, b):
     end_idx=1
@@ -38,112 +40,122 @@ def job_script_name_for (job):
 
     return script_name
 
-# sub batch_header ( cpu, mem, job, time, partition, job-files-dir, dependency, sarray_file_pattern, sarray_paired_file_pattern, sarray_limit )
-# {
-#     my header = qq:heredoc/END/;
-#         #!/bin/env bash
-#         #SBATCH -J job
-#         #SBATCH --mem mem
-#         #SBATCH --cpus-per-task cpu
-#         #SBATCH --ntasks 1
-#         #SBATCH --nodes 1
-#         #SBATCH --time time
-#         END
+def sorted_filenames_matching (pattern):
+    files = sorted(glob.glob(pattern))
+    print(f"found {files}")
+    return files
+
+def batch_header(args):
+
+    header = f'''\
+#!/bin/env bash
+#SBATCH -J job
+#SBATCH --mem {args.mem}
+#SBATCH --cpus-per-task {args.cpu}
+#SBATCH --ntasks 1
+#SBATCH --nodes 1
+#SBATCH --time time
+'''
+
+    if args.partition:
+        header += f"#SBATCH --partition {args.partition}\n"
+
+    if args.dependency:
+        header += f"#SBATCH --dependency {args.dependency}\n"
+
+    # Job file names
+    if args.sarray_file_pattern:
+        header += "#SBATCH -o job-files-dir/job.oe_%A_%a\n"
+
+    else:
+        header += "#SBATCH -o job-files-dir/job.oe_%j\n"
+
+#     if sarray_file_pattern
 #
-#     header ~= "#SBATCH --partition  partition\n"  if partition;
-#     header ~= "#SBATCH --dependency dependency\n" if dependency;
+#         filenames = sorted-filenames-matching(sarray_file_pattern)
 #
-#     # Job file names
-#     if sarray_file_pattern {
-#         header ~= "#SBATCH -o job-files-dir/job.oe_%A_%a\n";
-#     }
-#     else {
-#         header ~= "#SBATCH -o job-files-dir/job.oe_%j";
-#     }
-#
-#     if sarray_file_pattern {
-#
-#         my @filenames = sorted-filenames-matching(sarray_file_pattern);
-#
-#         my generated-sarray = '0-' ~ @filenames.end;
-#         generated-sarray ~= '%' ~ sarray_limit if sarray_limit;
-#         header ~= "#SBATCH --array=generated-sarray\n";
+#         my generated-sarray = '0-' ~ filenames.end
+#         generated-sarray ~= '%' ~ sarray_limit if sarray_limit
+#         header ~= "#SBATCH --array=generated-sarray\n"
 #
 #         #WARNING: Below is actually body, not header
 #         header ~= 'FILES=('
-#                  ~ @filenames.join(' ')
+#                  ~ filenames.join(' ')
 #                  ~ ')'
-#                  ~ "\n\n";
+#                  ~ "\n\n"
 #
-#         header ~= 'FILE={FILES[SLURM_ARRAY_TASK_ID]}' ~ "\n";
+#         header ~= 'FILE={FILES[SLURM_ARRAY_TASK_ID]}' ~ "\n"
 #
 #         # If paired, check that there are equal numbers of paired files
-#         if sarray_paired_file_pattern {
-#             my @paired_filenames = sorted-filenames-matching(sarray_paired_file_pattern);
+#         if sarray_paired_file_pattern
+#             paired_filenames = sorted-filenames-matching(sarray_paired_file_pattern)
 #
-#             if @paired_filenames.elems != @filenames.elems {
-#                 note "Number of paired filenames is not equal to number of regular filenames";
-#                 my max-index = max @filenames.end, @paired_filenames.end;
+#             if paired_filenames.elems != filenames.elems
+#                 note "Number of paired filenames is not equal to number of regular filenames"
+#                 my max-index = max filenames.end, paired_filenames.end
 #
-#                 note "File name (paired file name):";
-#                 for 0 .. max-index -> index {
-#                     my first-filename  =        @filenames[index] // '';
-#                     my paired_filename = @paired_filenames[index] // '';
-#                     note "first-filename (paired_filename)";
-#                 }
+#                 note "File name (paired file name):"
+#                 for 0 .. max-index -> index
+#                     my first-filename  =        filenames[index] // ''
+#                     my paired_filename = paired_filenames[index] // ''
+#                     note "first-filename (paired_filename)"
 #
-#                 note "Exiting ...";
-#                 exit;
-#             }
+#
+#                 note "Exiting ..."
+#                 exit
+#
 #
 #             #WARNING: Below is actually body, not header
 #             header ~= 'PAIRED_FILES=('
-#                      ~ @paired_filenames.join(' ')
+#                      ~ paired_filenames.join(' ')
 #                      ~ ')'
-#                      ~ "\n\n";
-#             header ~= 'PAIRED_FILE={PAIRED_FILES[SLURM_ARRAY_TASK_ID]}' ~ "\n";
+#                      ~ "\n\n"
+#             header ~= 'PAIRED_FILE={PAIRED_FILES[SLURM_ARRAY_TASK_ID]}' ~ "\n"
 #
-#             my @filename-prefixes;
+#             filename-prefixes
 #
-#             for (@filenames Z @paired_filenames).flat -> file, paired_file {
-#                 my prefix = common-prefix-for(file, paired_file);
-#                 @filename-prefixes.append(prefix);
-#             }
+#             for (filenames Z paired_filenames).flat -> file, paired_file
+#                 my prefix = common-prefix-for(file, paired_file)
+#                 filename-prefixes.append(prefix)
+#
 #
 #             #WARNING: Below is actually body, not header
 #             header ~= 'FILENAME_PREFIXES=('
-#                      ~ @filename-prefixes.join(' ')
+#                      ~ filename-prefixes.join(' ')
 #                      ~ ')'
-#                      ~ "\n\n";
-#             header ~= 'FILENAME_PREFIX={FILENAME_PREFIXES[SLURM_ARRAY_TASK_ID]}' ~ "\n";
-#         }
-#     }
-#
+#                      ~ "\n\n"
+#             header ~= 'FILENAME_PREFIX={FILENAME_PREFIXES[SLURM_ARRAY_TASK_ID]}' ~ "\n"
+
+    return header
+
+
+
+
+
 #     #WARNING: Below is actually body, not header
-#     header ~=  qq:heredoc/END/;
+#     header ~=  qq:heredoc/END/
 #
 #         # list all loaded modules
 #         module list
 #         END
 #
-#     return header;
-# }
+#     return header
 
 # # Create the text for a batch script
 # def batch_code (args):
 #     # Create batch header
 #     header = batch_header(args)
-# 
+#
 #     # Add body to code
 #     code = f"{header}\n"
-# 
+#
 #     # separate statements into separate lines
 #     lines = re.sub(r'\s*;\s*',"\n")
-# 
+#
 #     code += lines
-# 
+#
 #     return code
-# 
+#
 
 
 if __name__ == '__main__':
@@ -157,7 +169,10 @@ if __name__ == '__main__':
     parser.add_argument('--job_files_dir',  type=str, help='job log directory (default: "job_files.dir")', default='job_files.dir')
 
     parser.add_argument('--dependency',     type=str, help='list of jobs that must finish before this one starts')
-    parser.add_argument('--sarray_file_pattern', type=str, help='Pattern of files to include in sarray. With this option, you can $FILE in your script to refer to a file. (Required if --sarray_paried_file_pattern is used)', required='--sarray_paired_file_pattern' in sys.argv)
+    parser.add_argument('--sarray_file_pattern', type=str,
+            help='Pattern of files to include in sarray. With this option, you can $FILE in your script to refer to a file. (Required if --sarray_paired_file_pattern is used)',
+            required=any(re.search('sarray_paired_file_pattern',argument) for argument in sys.argv)
+    )
     parser.add_argument('--sarray_paired_file_pattern', type=str, help='Pattern of paired files to include in sarray (use $PAIRED_FILE in your script to refer to a paired file')
     parser.add_argument('--script_only',    type=bool, help="Create the script, but don't run it", default=False)
     parser.add_argument('--sarray_limit',   type=bool, help='Number of simultaneous jobs to allow to run at the same time')
@@ -170,8 +185,12 @@ if __name__ == '__main__':
 
     print(job_script_name)
 
+    print(batch_header(args))
+
+    print(sorted_filenames_matching('*.sbatch'))
+
 #     my_batch_code = batch_code(mem, cpu, wrap, job, time, partition, job_files_dir, dependency, sarray_file_pattern, sarray_paired_file_pattern, sarray_limit)
-# 
+#
 #     print(my_batch_code)
 
 #     my $batch_code      = batch_code(:$mem, :$cpu, :$wrap, :$job, :$time, :$partition, :$job_files_dir, :$dependency, :$sarray_file_pattern, :$sarray_paired_file_pattern, :$sarray_limit);
@@ -188,9 +207,6 @@ if __name__ == '__main__':
 
 
 
-# sub sorted-filenames-matching ($pattern) {
-#     return dir(test => / (<$pattern>) / ).sort;
-# }
 
 
 
