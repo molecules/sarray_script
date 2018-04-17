@@ -70,21 +70,25 @@ def batch_header(args):
     else:
         header += "#SBATCH -o job-files-dir/job.oe_%j\n"
 
-#     if sarray_file_pattern
-#
-#         filenames = sorted-filenames-matching(sarray_file_pattern)
-#
-#         my generated-sarray = '0-' ~ filenames.end
-#         generated-sarray ~= '%' ~ sarray_limit if sarray_limit
-#         header ~= "#SBATCH --array=generated-sarray\n"
-#
+    if args.sarray_file_pattern:
+
+        filenames = sorted_filenames_matching(args.sarray_file_pattern)
+
+        header += f"#SBATCH --array=0-{len(filenames) - 1}"
+
+        if args.sarray_limit:
+            header += f"%{args.sarray_limit}"
+
+        # Add newline (didn't put it on earlier in case we needed to wait for sarray_limit
+        header += "\n" 
+
 #         #WARNING: Below is actually body, not header
-#         header ~= 'FILES=('
-#                  ~ filenames.join(' ')
-#                  ~ ')'
-#                  ~ "\n\n"
+#         header += 'FILES=('
+#                  + filenames.join(' ')
+#                  + ')'
+#                  + "\n\n"
 #
-#         header ~= 'FILE={FILES[SLURM_ARRAY_TASK_ID]}' ~ "\n"
+#         header += 'FILE={FILES[SLURM_ARRAY_TASK_ID]}' + "\n"
 #
 #         # If paired, check that there are equal numbers of paired files
 #         if sarray_paired_file_pattern
@@ -106,11 +110,11 @@ def batch_header(args):
 #
 #
 #             #WARNING: Below is actually body, not header
-#             header ~= 'PAIRED_FILES=('
-#                      ~ paired_filenames.join(' ')
-#                      ~ ')'
-#                      ~ "\n\n"
-#             header ~= 'PAIRED_FILE={PAIRED_FILES[SLURM_ARRAY_TASK_ID]}' ~ "\n"
+#             header += 'PAIRED_FILES=('
+#                      + paired_filenames.join(' ')
+#                      + ')'
+#                      + "\n\n"
+#             header += 'PAIRED_FILE={PAIRED_FILES[SLURM_ARRAY_TASK_ID]}' + "\n"
 #
 #             filename-prefixes
 #
@@ -120,11 +124,11 @@ def batch_header(args):
 #
 #
 #             #WARNING: Below is actually body, not header
-#             header ~= 'FILENAME_PREFIXES=('
-#                      ~ filename-prefixes.join(' ')
-#                      ~ ')'
-#                      ~ "\n\n"
-#             header ~= 'FILENAME_PREFIX={FILENAME_PREFIXES[SLURM_ARRAY_TASK_ID]}' ~ "\n"
+#             header += 'FILENAME_PREFIXES=('
+#                      + filename-prefixes.join(' ')
+#                      + ')'
+#                      + "\n\n"
+#             header += 'FILENAME_PREFIX={FILENAME_PREFIXES[SLURM_ARRAY_TASK_ID]}' + "\n"
 
     return header
 
@@ -133,11 +137,11 @@ def batch_header(args):
 
 
 #     #WARNING: Below is actually body, not header
-#     header ~=  qq:heredoc/END/
+#     header +=  f'''\
 #
-#         # list all loaded modules
-#         module list
-#         END
+#     # list all loaded modules
+#     module list
+#     '''
 #
 #     return header
 
@@ -175,7 +179,7 @@ if __name__ == '__main__':
     )
     parser.add_argument('--sarray_paired_file_pattern', type=str, help='Pattern of paired files to include in sarray (use $PAIRED_FILE in your script to refer to a paired file')
     parser.add_argument('--script_only',    type=bool, help="Create the script, but don't run it", default=False)
-    parser.add_argument('--sarray_limit',   type=bool, help='Number of simultaneous jobs to allow to run at the same time')
+    parser.add_argument('--sarray_limit',   type=int, help='Number of simultaneous jobs to allow to run at the same time')
 
     args = parser.parse_args()
 
@@ -186,8 +190,6 @@ if __name__ == '__main__':
     print(job_script_name)
 
     print(batch_header(args))
-
-    print(sorted_filenames_matching('*.sbatch'))
 
 #     my_batch_code = batch_code(mem, cpu, wrap, job, time, partition, job_files_dir, dependency, sarray_file_pattern, sarray_paired_file_pattern, sarray_limit)
 #
