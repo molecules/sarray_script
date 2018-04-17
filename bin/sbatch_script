@@ -76,7 +76,7 @@ sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$
         $header ~= "#SBATCH -o $job-files-dir/$job.oe_%A_%a\n";
     }
     else {
-        $header ~= "#SBATCH -o $job-files-dir/$job.oe_%j";
+        $header ~= "#SBATCH -o $job-files-dir/$job.oe_%j\n";
     }
 
     if $sarray-file-pattern {
