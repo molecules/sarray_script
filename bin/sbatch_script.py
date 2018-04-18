@@ -9,6 +9,7 @@ import pathlib
 import re
 import os
 import glob
+import subprocess
 
 def common_prefix_for (a, b):
     end_idx=1
@@ -42,19 +43,18 @@ def job_script_name_for (job):
 
 def sorted_filenames_matching (pattern):
     files = sorted(glob.glob(pattern))
-    print(f"found {files}")
     return files
 
 def batch_header(args):
 
     header = f'''\
 #!/bin/env bash
-#SBATCH -J job
+#SBATCH --job-name {args.job}
 #SBATCH --mem {args.mem}
 #SBATCH --cpus-per-task {args.cpu}
 #SBATCH --ntasks 1
 #SBATCH --nodes 1
-#SBATCH --time time
+#SBATCH --time {args.time}
 '''
 
     if args.partition:
@@ -65,10 +65,10 @@ def batch_header(args):
 
     # Job file names
     if args.sarray_file_pattern:
-        header += "#SBATCH -o job-files-dir/job.oe_%A_%a\n"
+        header += f"#SBATCH -o {args.job_files_dir}/job.oe_%A_%a\n"
 
     else:
-        header += "#SBATCH -o job-files-dir/job.oe_%j\n"
+        header += f"#SBATCH -o {job_files_dir}/job.oe_%j\n"
 
     if args.sarray_file_pattern:
 
@@ -82,13 +82,9 @@ def batch_header(args):
         # Add newline (didn't put it on earlier in case we needed to wait for sarray_limit
         header += "\n" 
 
-#         #WARNING: Below is actually body, not header
-#         header += 'FILES=('
-#                  + filenames.join(' ')
-#                  + ')'
-#                  + "\n\n"
-#
-#         header += 'FILE={FILES[SLURM_ARRAY_TASK_ID]}' + "\n"
+        #WARNING: Below is actually body, not header
+        header += f"FILES=({' '.join(filenames)})\n\n"
+        header += 'FILE=${FILES[$SLURM_ARRAY_TASK_ID]}' + "\n"
 #
 #         # If paired, check that there are equal numbers of paired files
 #         if sarray_paired_file_pattern
@@ -145,21 +141,21 @@ def batch_header(args):
 #
 #     return header
 
-# # Create the text for a batch script
-# def batch_code (args):
-#     # Create batch header
-#     header = batch_header(args)
-#
-#     # Add body to code
-#     code = f"{header}\n"
-#
-#     # separate statements into separate lines
-#     lines = re.sub(r'\s*;\s*',"\n")
-#
-#     code += lines
-#
-#     return code
-#
+# Create the text for a batch script
+def batch_code (args):
+    # Create batch header
+    header = batch_header(args)
+
+    # Add body to code
+    code = f"{header}\n"
+
+    # separate statements into separate lines
+    lines = re.sub(r'\s*;\s*',"\n",args.wrap)
+
+    code += lines
+
+    return code
+
 
 
 if __name__ == '__main__':
@@ -187,25 +183,15 @@ if __name__ == '__main__':
 
     job_script_name = job_script_name_for(args.job)
 
-    print(job_script_name)
+    my_batch_code = batch_code(args)
 
-    print(batch_header(args))
+    with open(job_script_name, "w") as fh:
+        fh.write(my_batch_code)
 
-#     my_batch_code = batch_code(mem, cpu, wrap, job, time, partition, job_files_dir, dependency, sarray_file_pattern, sarray_paired_file_pattern, sarray_limit)
-#
-#     print(my_batch_code)
+    if args.script_only is not None:
 
-#     my $batch_code      = batch_code(:$mem, :$cpu, :$wrap, :$job, :$time, :$partition, :$job_files_dir, :$dependency, :$sarray_file_pattern, :$sarray_paired_file_pattern, :$sarray_limit);
-#
-#     # Write batch file
-#     spurt($job_script_name, $batch_code);
-#
-#     unless ( $script-only )
-#     {
-#         # Run batch file
-#         run("sbatch", $job_script_name);
-#     }
-# }
+        # Run batch file
+        subprocess.run(['sbatch', job_script_name])
 
 
 
