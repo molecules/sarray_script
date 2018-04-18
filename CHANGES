@@ -1,3 +1,4 @@
+0.0.15: Almost working. Still need to improve output so it does not come out as bytestring  
 0.0.14: Continuing to build up functionality in Python version sbatch_script.py  
 0.0.13: Now extracting common prefixes of paired file names.  
 0.0.12: updated tests to use new bin/ location for sbatch_script  

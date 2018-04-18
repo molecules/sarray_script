@@ -22,7 +22,7 @@ SLURM helper utility for creating sbatch scripts from the command line.
 
 # Version
 
-0.0.14
+0.0.15
 
 # Dependencies:  
 
@@ -33,8 +33,21 @@ For sbatch_script.py: Python 3.6 or later (https://www.python.org/)
 
 slurm (https://slurm.schedmd.com/)  
 
+# DIAGNOSTICS
+
+If --sarray-file-pattern and --sarray-paired-file-pattern are both used but
+they generate different numbers of files, then the following error will be
+seen:
+
+    ERROR: --sarray-file-pattern and --sarray-paired-file-pattern produce 
+           different numbers of files. List of 'File name (paired file name)':
+
+Followed by a list of the files showing what it thinks the pairs are and which
+seem to be missing.
+
 # CHANGES
 
+0.0.15: Almost working. Still need to improve output so it does not come out as bytestring  
 0.0.14: Continuing to build up functionality in Python version sbatch_script.py  
 0.0.13: Now extracting common prefixes of paired file names.  
 0.0.12: updated tests to use new bin/ location for sbatch_script  

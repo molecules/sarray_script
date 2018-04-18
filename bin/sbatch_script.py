@@ -68,7 +68,7 @@ def batch_header(args):
         header += f"#SBATCH -o {args.job_files_dir}/job.oe_%A_%a\n"
 
     else:
-        header += f"#SBATCH -o {job_files_dir}/job.oe_%j\n"
+        header += f"#SBATCH -o {args.job_files_dir}/job.oe_%j\n"
 
     if args.sarray_file_pattern:
 
@@ -80,7 +80,7 @@ def batch_header(args):
             header += f"%{args.sarray_limit}"
 
         # Add newline (didn't put it on earlier in case we needed to wait for sarray_limit
-        header += "\n" 
+        header += "\n"
 
         #WARNING: Below is actually body, not header
         header += f"FILES=({' '.join(filenames)})\n\n"
@@ -90,65 +90,64 @@ def batch_header(args):
         if args.sarray_paired_file_pattern:
             paired_filenames = sorted_filenames_matching(args.sarray_paired_file_pattern)
 
-            if len(paired_filenames) != len(filenames):
-                print("Number of paired filenames is not equal to number of regular filenames")
-                max_index = max(len(filenames), len(paired_filenames))
+            length_filenames = len(filenames)
+            length_paired    = len(paired_filenames)
 
-                print("File name (paired file name):")
+            if length_filenames != length_paired:
+                print("\n")
+                print("ERROR: --sarray-file-pattern and --sarray-paired-file-pattern produce ")
+                print(" different numbers of files. List of 'File name (paired file name):'\n")
+
+                max_index = max(length_filenames, length_paired)
                 for index in range(0,max_index):
-                    # first-filename  =        filenames[index] ? filenames[index] : ''
-                    # paired_filename = paired_filenames[index] ? paired_filenames[infex] : ''
-                    # print "{first-filename} ({paired_filename})"
-                    print(index)
+                    pair_report = ''
+
+                    if index < length_filenames:
+                        pair_report += f"{filenames[index]} ("
+                    else:
+                        pair_report += "--not found-- ("
+
+                    if index < length_paired:
+                        pair_report += f"{paired_filenames[index]})"
+                    else:
+                        pair_report += "--not found--)"
+
+                    print(f"\t{pair_report}")
+
+                print("\nExiting ...")
+                exit(1)
+
+            #WARNING: Below is actually body, not header
+            header += f"PAIRED_FILES=({ ' '.join(paired_filenames) } )\n\n"
+            header += 'PAIRED_FILE=${PAIRED_FILES[$SLURM_ARRAY_TASK_ID]}' + "\n"
+
+            filename_prefixes = []
+            for file_, paired_file in zip(filenames, paired_filenames):
+                prefix = common_prefix_for(file_, paired_file)
+                filename_prefixes.append(prefix)
 
 
-                print("Exiting ...")
-                exit()
-#
-#
-#             #WARNING: Below is actually body, not header
-#             header += 'PAIRED_FILES=('
-#                      + paired_filenames.join(' ')
-#                      + ')'
-#                      + "\n\n"
-#             header += 'PAIRED_FILE={PAIRED_FILES[SLURM_ARRAY_TASK_ID]}' + "\n"
-#
-#             filename-prefixes
-#
-#             for (filenames Z paired_filenames).flat -> file, paired_file
-#                 my prefix = common-prefix-for(file, paired_file)
-#                 filename-prefixes.append(prefix)
-#
-#
-#             #WARNING: Below is actually body, not header
-#             header += 'FILENAME_PREFIXES=('
-#                      + filename-prefixes.join(' ')
-#                      + ')'
-#                      + "\n\n"
-#             header += 'FILENAME_PREFIX={FILENAME_PREFIXES[SLURM_ARRAY_TASK_ID]}' + "\n"
+            #WARNING: Below is actually body, not header
+            header += 'FILENAME_PREFIXES=(' + ' '.join(filename_prefixes) + ")\n\n"
+            header += 'FILENAME_PREFIX=${FILENAME_PREFIXES[$SLURM_ARRAY_TASK_ID]}' + "\n"
+
+    #WARNING: Below is actually body, not header
+    header +=  f'''\
+
+# list all loaded modules
+module list
+'''
 
     return header
 
-
-
-
-
-#     #WARNING: Below is actually body, not header
-#     header +=  f'''\
-#
-#     # list all loaded modules
-#     module list
-#     '''
-#
-#     return header
-
 # Create the text for a batch script
 def batch_code (args):
-    # Create batch header
-    header = batch_header(args)
+
+    # Add batch header
+    code = batch_header(args)
+    code += "\n"
 
     # Add body to code
-    code = f"{header}\n"
 
     # separate statements into separate lines
     lines = re.sub(r'\s*;\s*',"\n",args.wrap)
@@ -156,7 +155,6 @@ def batch_code (args):
     code += lines
 
     return code
-
 
 
 if __name__ == '__main__':
@@ -192,22 +190,6 @@ if __name__ == '__main__':
     if args.script_only is not None:
 
         # Run batch file
-        subprocess.run(['sbatch', job_script_name])
-
-
-
-
-
-
-
-# sub common-prefix-for ($a, $b) {
-#     my $current-substring = $a.substr(0,1);
-#     my $longest-substring;
-#
-#     while $b.starts-with($current-substring) {
-#         $longest-substring = $current-substring;
-#         $current-substring = $a.substr(0,$++);
-#     }
-#
-#     return $longest-substring;
-# }
+        #subprocess.run(['sbatch', job_script_name])
+        output = subprocess.run(['sbatch', job_script_name],stdout=subprocess.PIPE)
+        print(output.stdout)
