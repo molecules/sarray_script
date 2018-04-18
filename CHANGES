@@ -1,3 +1,4 @@
+0.0.14: Continuing to build up functionality in Python version sbatch_script.py  
 0.0.13: Now extracting common prefixes of paired file names.  
 0.0.12: updated tests to use new bin/ location for sbatch_script  
 0.0.11: moved script to bin/ directory so that it will be installed properly  

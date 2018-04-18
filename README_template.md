@@ -28,7 +28,8 @@ VERSION-PLACEHOLDER
 
 Linux operating system (tested on CentOS 7)  
 
-Rakudo Star 2017.10 or later (https://perl6.org/downloads/)  
+For sbatch_script:    Rakudo Star 2017.10 or later (https://perl6.org/downloads/)  
+For sbatch_script.py: Python 3.6 or later (https://www.python.org/)
 
 slurm (https://slurm.schedmd.com/)  
 

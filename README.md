@@ -22,18 +22,20 @@ SLURM helper utility for creating sbatch scripts from the command line.
 
 # Version
 
-0.0.13
+0.0.14
 
 # Dependencies:  
 
 Linux operating system (tested on CentOS 7)  
 
-Rakudo Star 2017.10 or later (https://perl6.org/downloads/)  
+For sbatch_script:    Rakudo Star 2017.10 or later (https://perl6.org/downloads/)  
+For sbatch_script.py: Python 3.6 or later (https://www.python.org/)
 
 slurm (https://slurm.schedmd.com/)  
 
 # CHANGES
 
+0.0.14: Continuing to build up functionality in Python version sbatch_script.py  
 0.0.13: Now extracting common prefixes of paired file names.  
 0.0.12: updated tests to use new bin/ location for sbatch_script  
 0.0.11: moved script to bin/ directory so that it will be installed properly  
