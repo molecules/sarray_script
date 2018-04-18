@@ -85,24 +85,25 @@ def batch_header(args):
         #WARNING: Below is actually body, not header
         header += f"FILES=({' '.join(filenames)})\n\n"
         header += 'FILE=${FILES[$SLURM_ARRAY_TASK_ID]}' + "\n"
-#
-#         # If paired, check that there are equal numbers of paired files
-#         if sarray_paired_file_pattern
-#             paired_filenames = sorted-filenames-matching(sarray_paired_file_pattern)
-#
-#             if paired_filenames.elems != filenames.elems
-#                 note "Number of paired filenames is not equal to number of regular filenames"
-#                 my max-index = max filenames.end, paired_filenames.end
-#
-#                 note "File name (paired file name):"
-#                 for 0 .. max-index -> index
-#                     my first-filename  =        filenames[index] // ''
-#                     my paired_filename = paired_filenames[index] // ''
-#                     note "first-filename (paired_filename)"
-#
-#
-#                 note "Exiting ..."
-#                 exit
+
+        # If paired, check that there are equal numbers of paired files
+        if args.sarray_paired_file_pattern:
+            paired_filenames = sorted_filenames_matching(args.sarray_paired_file_pattern)
+
+            if len(paired_filenames) != len(filenames):
+                print("Number of paired filenames is not equal to number of regular filenames")
+                max_index = max(len(filenames), len(paired_filenames))
+
+                print("File name (paired file name):")
+                for index in range(0,max_index):
+                    # first-filename  =        filenames[index] ? filenames[index] : ''
+                    # paired_filename = paired_filenames[index] ? paired_filenames[infex] : ''
+                    # print "{first-filename} ({paired_filename})"
+                    print(index)
+
+
+                print("Exiting ...")
+                exit()
 #
 #
 #             #WARNING: Below is actually body, not header
