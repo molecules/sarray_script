@@ -1,3 +1,4 @@
+0.0.19: Completed renaming. Also added default partition.  
 0.0.18: Renaming Perl 6 script so that the Python version can take its name  
 0.0.17: Documented diagnostic info expected in case paired files do not match up  
 0.0.16: Fixed job test  
