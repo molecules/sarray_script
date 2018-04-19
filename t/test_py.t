@@ -192,15 +192,15 @@ sub file_for ($section, :$filename="$section.txt") {
     return $filename;
 }
 
-sub get_jobid ($string) {
+sub get_jobid ($string is copy) {
 
     die 'Cannot get job ID from Empty String' if $string eq '';
 
     # remove newline character (if any)
-    chomp $string;
+    $string.=chomp;
 
     # Extract jobid
-    if $string ~~ /^ .* \s (\d+) \s* ['\n']? "'"? $ / {
+    if $string ~~ /^ .* \s (\d+) \s* \\ / {
         my $jobid = $0;
         return $jobid;
     }
