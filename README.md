@@ -22,7 +22,7 @@ SLURM helper utility for creating sbatch scripts from the command line.
 
 # Version
 
-0.0.16
+0.0.17
 
 # Dependencies:  
 
@@ -47,6 +47,7 @@ seem to be missing.
 
 # CHANGES
 
+0.0.17: Documented diagnostic info expected in case paired files do not match up  
 0.0.16: Fixed job test  
 0.0.15: Almost working. Still need to improve output so it does not come out as bytestring  
 0.0.14: Continuing to build up functionality in Python version sbatch_script.py  

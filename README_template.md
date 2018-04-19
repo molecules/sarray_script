@@ -33,5 +33,17 @@ For sbatch_script.py: Python 3.6 or later (https://www.python.org/)
 
 slurm (https://slurm.schedmd.com/)  
 
+# DIAGNOSTICS
+
+If --sarray-file-pattern and --sarray-paired-file-pattern are both used but
+they generate different numbers of files, then the following error will be
+seen:
+
+    ERROR: --sarray-file-pattern and --sarray-paired-file-pattern produce 
+           different numbers of files. List of 'File name (paired file name)':
+
+Followed by a list of the files showing what it thinks the pairs are and which
+seem to be missing.
+
 # CHANGES
 
