@@ -22,7 +22,7 @@ SLURM helper utility for creating sbatch scripts from the command line.
 
 # Version
 
-0.0.19
+0.0.20
 
 # Dependencies:  
 
@@ -47,6 +47,7 @@ seem to be missing.
 
 # CHANGES
 
+0.0.20: Script no longer runs by default (use "--run" flag if desired). Also, improved parameter names. (Thanks for the feedback Nick, Tendai, and Jenny)  
 0.0.19: Completed renaming. Also added default partition.  
 0.0.18: Renaming Perl 6 script so that the Python version can take its name  
 0.0.17: Documented diagnostic info expected in case paired files do not match up  
