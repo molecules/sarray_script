@@ -1,33 +1,33 @@
 #!/storage/htc/biocompute/ircf/apps/rakudo-star/rakudo-star-2018.01/install/bin/perl6
 #sbatch_script
 
-# job and wrap as positional parameters, the rest as named parameters
+# all named parameters
 sub MAIN (
 #= Create and run an sbatch script
-    Str       $job,                           #= Job name (only alphanumeric, dash, or underscore allowed)
-    Str       $wrap,                          #= Command to execute
+    Str      :$job,                           #= Job name (only alphanumeric, dash, or underscore allowed)
+    Str      :$command,                       #= Command to execute
     Int      :$cpu=1,                         #= Number of cores to use . default: 1
     Str      :$mem='10G',                     #= Total RAM to allocate. . default: "10G"
     Str      :$time='1-0:00:00',              #= Time limit . . . . . . . default: "1-0:00:00", meaning 1 day, 0 hours, 00 minutes, 00 seconds
     Str      :$partition,                     #= partition to use
     Str      :$job-files-dir='job_files.dir', #= job log directory. . . . default: "job_files.dir"
     Str      :$dependency,                    #= list of jobs that must finish before this one starts
-    Str      :$sarray-file-pattern,           #= Pattern of files to include in sarray (use $FILE in your script to refer to a file)
-    Str      :$sarray-paired-file-pattern,    #= Pattern of paired files to include in sarray (use $PAIRED_FILE in your script to refer to a paired file)
+    Str      :$file-pattern,                  #= Pattern of files to include in sarray (use $FILE in your script to refer to a file)
+    Str      :$paired-file-pattern,           #= Pattern of paired files to include in sarray (use $PAIRED_FILE in your script to refer to a paired file)
     Bool     :$script-only=False,             #= Create the script, but don't run it
     Bool     :$sarray-limit,                  #= Number of simultaneous jobs to allow to run at the same time
 )
 {
 
     # Paired file pattern is meaningless if it lacks something to pair with
-    if $sarray-paired-file-pattern && ! $sarray-file-pattern {
-        note '--sarray-paired-file-pattern requires --sarray-file-pattern';
+    if $paired-file-pattern && ! $file-pattern {
+        note '--paired-file-pattern requires --file-pattern';
         exit;
     }
 
     mkdir $job-files-dir;
     my $job_script_name = job_script_name_for($job);
-    my $batch_code      = batch_code(:$mem, :$cpu, :$wrap, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$sarray-file-pattern, :$sarray-paired-file-pattern, :$sarray-limit);
+    my $batch_code      = batch_code(:$mem, :$cpu, :$command, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$file-pattern, :$paired-file-pattern, :$sarray-limit);
 
     # Write batch file
     spurt($job_script_name, $batch_code);
@@ -40,23 +40,23 @@ sub MAIN (
 }
 
 # Create the text for a batch script
-sub batch_code ( :$wrap, :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$sarray-file-pattern, :$sarray-paired-file-pattern, :$sarray-limit)
+sub batch_code ( :$command, :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$file-pattern, :$paired-file-pattern, :$sarray-limit)
 {
     # Create batch header
-    my $header = batch_header( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$sarray-file-pattern, :$sarray-paired-file-pattern, :$sarray-limit);
+    my $header = batch_header( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$file-pattern, :$paired-file-pattern, :$sarray-limit);
 
     # Add body to code
     my $code = "$header\n";
 
     # separate statements into separate lines
-    my @lines = $wrap.subst(/ \s* \; \s* /,"\n", :global);
+    my @lines = $command.subst(/ \s* \; \s* /,"\n", :global);
 
     $code~= @lines.join("\n") ~ "\n";
 
     return $code;
 }
 
-sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$sarray-file-pattern, :$sarray-paired-file-pattern, :$sarray-limit )
+sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$dependency, :$file-pattern, :$paired-file-pattern, :$sarray-limit )
 {
     my $header = qq:heredoc/END/;
         #!/bin/env bash
@@ -72,16 +72,16 @@ sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$
     $header ~= "#SBATCH --dependency $dependency\n" if $dependency;
 
     # Job file names
-    if $sarray-file-pattern {
+    if $file-pattern {
         $header ~= "#SBATCH -o $job-files-dir/$job.oe_%A_%a\n";
     }
     else {
         $header ~= "#SBATCH -o $job-files-dir/$job.oe_%j\n";
     }
 
-    if $sarray-file-pattern {
+    if $file-pattern {
 
-        my @filenames = sorted-filenames-matching($sarray-file-pattern);
+        my @filenames = sorted-filenames-matching($file-pattern);
 
         my $generated-sarray = '0-' ~ @filenames.end;
         $generated-sarray ~= '%' ~ $sarray-limit if $sarray-limit; 
@@ -96,8 +96,8 @@ sub batch_header ( :$cpu, :$mem, :$job, :$time, :$partition, :$job-files-dir, :$
         $header ~= 'FILE=${FILES[$SLURM_ARRAY_TASK_ID]}' ~ "\n";
 
         # If paired, check that there are equal numbers of paired files
-        if $sarray-paired-file-pattern {
-            my @paired-filenames = sorted-filenames-matching($sarray-paired-file-pattern);
+        if $paired-file-pattern {
+            my @paired-filenames = sorted-filenames-matching($paired-file-pattern);
 
             if @paired-filenames.elems != @filenames.elems {
                 note "Number of paired filenames is not equal to number of regular filenames";

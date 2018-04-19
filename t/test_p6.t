@@ -17,9 +17,9 @@ my $test1 = start { # Check what happens with waiting on timed out job
         my $job = 'test_job';
         my $out = 'result.out';
 
-        my $raw_job_id = qqx{ ../../bin/sbatch_script.p6 --time=0:00:10 $job 'sleep 300; cat $file1 $file2 > $out'};
+        my $raw_job_id = qqx{ ../../bin/sbatch_script.p6 --time=0:00:10 --job=$job --command='sleep 300; cat $file1 $file2 > $out'};
         my $job_id     = get_jobid($raw_job_id);
-        my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
+        my $wait_step  = qqx{ sbatch --partition=Lewis,BioCompute --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
 
         my $result = $out.IO.e;
 
@@ -47,9 +47,9 @@ my $test2 = start { # Test paired files
 
         my $job = 'test_job';
 
-        my $raw_job_id = qx{ ../../bin/sbatch_script.p6 --sarray-file-pattern='_R1_001.fastq$' --sarray-paired-file-pattern='_R2_001.fastq$' get_seqs 'awk "\{if (FNR % 4 == 2) print\}" $FILE > forward.$SLURM_ARRAY_TASK_ID.seqs; awk "\{if (FNR % 4 == 2) print\}" $PAIRED_FILE > reverse.$SLURM_ARRAY_TASK_ID.seqs; '};
+        my $raw_job_id = qx{ ../../bin/sbatch_script.p6 --file-pattern='_R1_001.fastq$' --paired-file-pattern='_R2_001.fastq$' --job=get_seqs --command='awk "\{if (FNR % 4 == 2) print\}" $FILE > forward.$SLURM_ARRAY_TASK_ID.seqs; awk "\{if (FNR % 4 == 2) print\}" $PAIRED_FILE > reverse.$SLURM_ARRAY_TASK_ID.seqs; '};
         my $job_id     = get_jobid($raw_job_id);
-        my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
+        my $wait_step  = qqx{ sbatch --partition=Lewis,BioCompute --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
 
         for 0 .. 1 -> $i {
             my $result1   = slurp "forward.$i.seqs";
@@ -78,9 +78,9 @@ my $test3 = start { # Test basic
         my $job = 'test_job';
         my $out = 'result.out';
 
-        my $raw_job_id = qqx{ ../../bin/sbatch_script.p6 $job 'cat $file1 $file2 > $out'};
+        my $raw_job_id = qqx{ ../../bin/sbatch_script.p6 --job=$job --command='cat $file1 $file2 > $out'};
         my $job_id     = get_jobid($raw_job_id);
-        my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
+        my $wait_step  = qqx{ sbatch --partition=Lewis,BioCompute --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
 
         my $result   = slurp $out;
 
@@ -109,9 +109,9 @@ my $test4 = start { # Test prefix extraction
 
         my $job = 'test4';
 
-        my $raw_job_id = qx{ ../../bin/sbatch_script.p6 --sarray-file-pattern='_R1_001.fastq$' --sarray-paired-file-pattern='_R2_001.fastq$' check_prefixes 'echo "$FILENAME_PREFIX" > temp_prefix_$FILENAME_PREFIX.txt'};
+        my $raw_job_id = qx{ ../../bin/sbatch_script.p6 --file-pattern='_R1_001.fastq$' --paired-file-pattern='_R2_001.fastq$' --job=check_prefixes --command='echo "$FILENAME_PREFIX" > temp_prefix_$FILENAME_PREFIX.txt'};
         my $job_id     = get_jobid($raw_job_id);
-        my $wait_step  = qqx{ sbatch --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
+        my $wait_step  = qqx{ sbatch --partition=Lewis,BioCompute --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
 
         my $result   = qqx{ cat temp_prefix_*.txt | sort };
         my $expected = "file_11_R\nfile_12_R\n";
