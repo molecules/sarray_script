@@ -8,7 +8,7 @@ SLURM helper utility for creating sbatch scripts from the command line.
 
 # VERSION
 
-0.0.26
+0.0.27
 
 # SYNOPSIS
 
@@ -42,7 +42,7 @@ This is because it embeds the filenames directly into the script.
 Inside the BASH script so generated, is available the variable $FILE, which
 represents the file processed by a single Slrum array task.  
 
-The following $BASH environment variables are created and available inside the
+The following BASH environment variables are created and available inside the
 sbatch script created by `sbatch_script` if the given parameters are used:  
 
 Available with --file-pattern flag:  
@@ -78,7 +78,9 @@ When all of the jobs finished running, the following would be the resulting file
     foo.combined.txt
     bar.combined.txt
 
-## Real life example using paired files
+## "cutadapt" example using paired files
+
+(Adapted from http://cutadapt.readthedocs.io/en/stable/guide.html#illumina-truseq.)
 
 Given these files:
 
@@ -87,11 +89,11 @@ Given these files:
     sampB_for.fastq.gz
     sampB_rev.fastq.gz
 
-The following command would create a script to trim them in pairs. (Please
-know what you are doing and don't simply copy and paste this. Please. For
-example, "AGAT" is waaaaaay too short for an adapter sequence.):
+This command line will "trim" these FASTQ files (Your adapters may be
+different. Please verify instead of blindly copying and pasting this
+code):
 
-    sbatch_script --file-pattern='*R1*' --paired-file-pattern='*R2*' --job=trim_files --command='cutadapt -a AGAT -A AGAT --output=${FILE_PREFIX}_for.fastq.gz --paired-output=${FILE_PREFIX}_rev.fastq.gz'
+    sbatch_script --file-pattern='*R1*' --paired-file-pattern='*R2*' --job=trim_files --command='cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA --output=${FILE_PREFIX}_for.fastq.gz --paired-output=${FILE_PREFIX}_rev.fastq.gz'
 
 Or using backslashed newlines to make the command line seem more sane:
 
@@ -100,9 +102,9 @@ Or using backslashed newlines to make the command line seem more sane:
         --paired-file-pattern='*R2*' \
         --job=trim_files \
         --command='cutadapt \
-                    -a AGAT \
-                    -A AGAT \
-                    --output=${FILE_PREFIX}_for.fastq.gz \
+                    -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC \
+                    -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA \
+                    --output=${FILE_PREFIX}_for.fastq.gz  \
                     --paired-output=${FILE_PREFIX}_rev.fastq.gz'
 
 # TRICKS
@@ -138,14 +140,14 @@ slurm (https://slurm.schedmd.com/)
 
 # DIAGNOSTICS
 
-If --file-pattern and --paired-file-pattern are both used but
+If `--file-pattern` and `--paired-file-pattern` are both used but
 they generate different numbers of files, then the following error will be
 seen:
 
     ERROR: --file-pattern and --paired-file-pattern produce
            different numbers of files. List of 'File name (paired file name)':
 
-Followed by a list of the files showing what it thinks the pairs are and which
+Followed by a list of the files that were assumed to be the pairs and which
 seem to be missing.
 
 For example, given these files:
@@ -154,10 +156,7 @@ For example, given these files:
     file_1.B.txt
     file_2.A.txt
     file_2.B.txt
-    file_3.A.txt
     file_3.B.txt
-    file_4.B.txt
-    file_5.B.txt
 
 With this command line:
 
@@ -171,9 +170,7 @@ Gives the following error:
 
             file_1.A.txt (file_1.B.txt)
             file_2.A.txt (file_2.B.txt)
-            file_3.A.txt (file_3.B.txt)
-            --not found-- (file_4.B.txt)
-            --not found-- (file_5.B.txt)
+            --not found-- (file_3.B.txt)
 
     Exiting ...
 
@@ -188,6 +185,7 @@ a copy of this license at http://www.perlfoundation.org/artistic_license_2_0.
 
 # CHANGES
 
+0.0.27: Added real adapters instead of "AGAT", because you know people really will copy and paste this code, despite the warning.  
 0.0.26: cleaned up README a little  
 0.0.25: Added Disclaimer and slight formatting improvements to README  
 0.0.24: Improved documentation  
