@@ -21,11 +21,8 @@ VERSION-PLACEHOLDER
     # Compress all "fastq" files in the directory in parallel using a SLURM Array
     sbatch_script --cpu=32 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes 32 $FILE'
 
-
     # Get sequence headers from each FASTQ file
     sbatch_script --file-pattern='*.fastq.gz' --job=get_headers --command='zcat $FILE | awk "{if (FNR % 4 == 1) print}" > $FILE.headers'
-
-    # Create a dummy script that contains the envir
 
 ## Processing multiple files in parallel
 
@@ -131,12 +128,6 @@ Even if you don't mentioned `$PAIRED_FILE` or `$FILE_PREFIX` on the command
 line, they will still be available inside your script if you used the
 `--paired-file-pattern` option.
 
-# GOTCHAS
-
-The coomputed
-
-`sbatch_script` has not been tested for creating scripts for MPI jobs.
-
 # DEPENDENCIES
 
 Linux operating system (tested on CentOS 7)
@@ -144,7 +135,6 @@ Linux operating system (tested on CentOS 7)
 Python 3.6 or later (https://www.python.org/)
 
 slurm (https://slurm.schedmd.com/)
-
 
 # DIAGNOSTICS
 

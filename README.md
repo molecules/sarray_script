@@ -8,7 +8,7 @@ SLURM helper utility for creating sbatch scripts from the command line.
 
 # VERSION
 
-0.0.25
+0.0.26
 
 # SYNOPSIS
 
@@ -21,11 +21,8 @@ SLURM helper utility for creating sbatch scripts from the command line.
     # Compress all "fastq" files in the directory in parallel using a SLURM Array
     sbatch_script --cpu=32 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes 32 $FILE'
 
-
     # Get sequence headers from each FASTQ file
     sbatch_script --file-pattern='*.fastq.gz' --job=get_headers --command='zcat $FILE | awk "{if (FNR % 4 == 1) print}" > $FILE.headers'
-
-    # Create a dummy script that contains the envir
 
 ## Processing multiple files in parallel
 
@@ -131,12 +128,6 @@ Even if you don't mentioned `$PAIRED_FILE` or `$FILE_PREFIX` on the command
 line, they will still be available inside your script if you used the
 `--paired-file-pattern` option.
 
-# GOTCHAS
-
-The coomputed
-
-`sbatch_script` has not been tested for creating scripts for MPI jobs.
-
 # DEPENDENCIES
 
 Linux operating system (tested on CentOS 7)
@@ -144,7 +135,6 @@ Linux operating system (tested on CentOS 7)
 Python 3.6 or later (https://www.python.org/)
 
 slurm (https://slurm.schedmd.com/)
-
 
 # DIAGNOSTICS
 
@@ -198,6 +188,7 @@ a copy of this license at http://www.perlfoundation.org/artistic_license_2_0.
 
 # CHANGES
 
+0.0.26: cleaned up README a little  
 0.0.25: Added Disclaimer and slight formatting improvements to README  
 0.0.24: Improved documentation  
 0.0.23: Long option names use dash instead of underscore (like Linux utilities). Also added more documentation and examples in README.  
@@ -222,6 +213,7 @@ a copy of this license at http://www.perlfoundation.org/artistic_license_2_0.
 0.0.4: Adding repository management tools .add and .commit (optional)  
 0.0.3: Now creating README from template  
 0.0.2: Parallel tests!  
+
 # DISCLAIMER OF WARRANTY
 
 BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR, OR CORRECTION.

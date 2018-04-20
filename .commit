@@ -17,8 +17,7 @@ sub MAIN ( $message, :$debug=0, :$zef=False ) {
 
     my $changes = "$version: $message  \n" ~ slurp "CHANGES";
 
-
-    $readme ~= $changes;
+    $readme ~= "$changes\n";
 
     $readme ~= slurp 'DISCLAIMER.md';
 
