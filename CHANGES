@@ -1,3 +1,4 @@
+0.0.24: Improved documentation  
 0.0.23: Long option names use dash instead of underscore (like Linux utilities). Also added more documentation and examples in README.  
 0.0.22: The executable in /bin is now just Python (for this branch)  
 0.0.21: Updated to be almost the same  

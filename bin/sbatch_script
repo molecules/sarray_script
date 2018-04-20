@@ -92,9 +92,9 @@ def batch_header(args):
             length_paired    = len(paired_filenames)
 
             if length_filenames != length_paired:
-                print("\n")
-                print("ERROR: --file_pattern and --paired_file_pattern produce ")
-                print(" different numbers of files. List of 'File name (paired file name):'\n")
+                print("\nERROR:")
+                print(f"--file_pattern='{args.file_pattern}' and --paired_file_pattern='{args.paired_file_pattern}' ")
+                print("produce  different numbers of files:'\n")
 
                 max_index = max(length_filenames, length_paired)
                 for index in range(0,max_index):
@@ -137,6 +137,7 @@ module list
 '''
 
     return header
+
 
 # Create the text for a batch script
 def batch_code (args):
@@ -186,9 +187,9 @@ if __name__ == '__main__':
     with open(job_script_name, "w") as fh:
         fh.write(my_batch_code)
 
+    # Run batch file (if requested)
     if args.run:
 
-        # Run batch file
         #subprocess.run(['sbatch', job_script_name])
         output = subprocess.run(['sbatch', job_script_name],stdout=subprocess.PIPE)
         print(output.stdout)
