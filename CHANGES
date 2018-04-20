@@ -1,3 +1,4 @@
+0.0.22: The executable in /bin is now just Python (for this branch)  
 0.0.21: Updated to be almost the same  
 0.0.20: Script no longer runs by default (use "--run" flag if desired). Also, improved parameter names. (Thanks for the feedback Nick, Tendai, and Jenny)  
 0.0.19: Completed renaming. Also added default partition.  

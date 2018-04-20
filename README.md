@@ -22,14 +22,13 @@ SLURM helper utility for creating sbatch scripts from the command line.
 
 # Version
 
-0.0.21
+0.0.22
 
 # Dependencies:  
 
 Linux operating system (tested on CentOS 7)  
 
-For sbatch_script:    Rakudo Star 2017.10 or later (https://perl6.org/downloads/)  
-For sbatch_script.py: Python 3.6 or later (https://www.python.org/)
+Python 3.6 or later (https://www.python.org/)
 
 slurm (https://slurm.schedmd.com/)  
 
@@ -47,6 +46,7 @@ seem to be missing.
 
 # CHANGES
 
+0.0.22: The executable in /bin is now just Python (for this branch)  
 0.0.21: Updated to be almost the same  
 0.0.20: Script no longer runs by default (use "--run" flag if desired). Also, improved parameter names. (Thanks for the feedback Nick, Tendai, and Jenny)  
 0.0.19: Completed renaming. Also added default partition.  
