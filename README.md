@@ -1,28 +1,28 @@
 # NAME
 
-sbatch_script
+sarray_script
 
 ## DESCRIPTION
 
-SLURM helper utility for creating sbatch scripts from the command line.
+Create shell scripts that process whole directories of files using SLURM
+arrays. Also works for paired files (like paired-end FASTQ files). 
 
 # VERSION
 
-0.0.27
+0.0.28
 
 # SYNOPSIS
 
-    # Simple quick script generation
-    sbatch_script --cpu=4 --mem=10G --job=job_name --command='ls > ls.txt'
+    # Compress all ".txt" files in the directory using a SLURM Array
+    sarray_script --cpu=32 --file-pattern='*.txt' --job=pigz_files --command='pigz --processes 32 $FILE'
 
-    # Simple quick script generation with immediate submission (using the --run flag)
-    sbatch_script --run --cpu=4 --mem=10G --job=job_name --command='ls > ls.txt'
+    # Given A_header.txt, A_body.txt, B_header.txt, and B_body.text, you could do the following  
+    sarray_script --run --file-pattern='*_header.txt' --paired-file-pattern='*_body.txt' --job=combine_files --command='cat $FILE $PAIRED_FILE > $FILE_PREFIX.doc.txt'
 
-    # Compress all "fastq" files in the directory in parallel using a SLURM Array
-    sbatch_script --cpu=32 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes 32 $FILE'
+    # Then for the bioinformaticians out there, work on those paired-end sequences:
+    sarray_script --file-pattern='*R1*' --paired-file-pattern='*R2*' --job=trim_files --command='cutadapt -a AGAT... -A AGAT... --output=${FILE_PREFIX}_for.fastq.gz --paired-output=${FILE_PREFIX}_rev.fastq.gz'
 
-    # Get sequence headers from each FASTQ file
-    sbatch_script --file-pattern='*.fastq.gz' --job=get_headers --command='zcat $FILE | awk "{if (FNR % 4 == 1) print}" > $FILE.headers'
+
 
 ## Processing multiple files in parallel
 
@@ -32,7 +32,7 @@ Please read the following and be sure you understand it.
 
 Do you have multiple files which you want to process in the same way?  
 
-If you give `sbatch_script` a file pattern using the `--file_pattern` flag,
+If you give `sarray_script` a file pattern using the `--file_pattern` flag,
 then, it will create a script that will run a slurm array with as many tasks
 as there are matching files in the directory.  
 
@@ -43,7 +43,7 @@ Inside the BASH script so generated, is available the variable $FILE, which
 represents the file processed by a single Slrum array task.  
 
 The following BASH environment variables are created and available inside the
-sbatch script created by `sbatch_script` if the given parameters are used:  
+sbatch script created by `sarray_script` if the given parameters are used:  
 
 Available with --file-pattern flag:  
 `$FILE` File processed by a single Slurm array task .  
@@ -60,7 +60,7 @@ Given these files:
 
 The following script would calculate the md5sum of each one:
 
-    sbatch_script --run --file-pattern='*.txt' --job=calc_md5sum --command='md5sum $FILE > $FILE.md5sum'
+    sarray_script --run --file-pattern='*.txt' --job=calc_md5sum --command='md5sum $FILE > $FILE.md5sum'
 
 ## Processing multiple paired files simple example  
 Given these files:  
@@ -72,7 +72,7 @@ Given these files:
 
 The following script would combine them:  
 
-    sbatch_script --run --file-pattern='*_A.txt' --paired-file-pattern='*_B.txt' --job=combine_files --command='cat $FILE $PAIRED_FILE > $FILE_PREFIX.combined.txt'
+    sarray_script --run --file-pattern='*_A.txt' --paired-file-pattern='*_B.txt' --job=combine_files --command='cat $FILE $PAIRED_FILE > $FILE_PREFIX.combined.txt'
 
 When all of the jobs finished running, the following would be the resulting files:  
     foo.combined.txt
@@ -93,11 +93,11 @@ This command line will "trim" these FASTQ files (Your adapters may be
 different. Please verify instead of blindly copying and pasting this
 code):
 
-    sbatch_script --file-pattern='*R1*' --paired-file-pattern='*R2*' --job=trim_files --command='cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA --output=${FILE_PREFIX}_for.fastq.gz --paired-output=${FILE_PREFIX}_rev.fastq.gz'
+    sarray_script --file-pattern='*R1*' --paired-file-pattern='*R2*' --job=trim_files --command='cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA --output=${FILE_PREFIX}_for.fastq.gz --paired-output=${FILE_PREFIX}_rev.fastq.gz'
 
 Or using backslashed newlines to make the command line seem more sane:
 
-    sbatch_script \
+    sarray_script \
         --file-pattern='*R1*' \
         --paired-file-pattern='*R2*' \
         --job=trim_files \
@@ -112,16 +112,16 @@ Or using backslashed newlines to make the command line seem more sane:
 Take advantage of SLURM environment variables
 
     # Instead of
-    sbatch_script --cpu=32 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes 32 $FILE'
+    sarray_script --cpu=32 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes 32 $FILE'
 
     # Use $SLURM_CPUS_PER_TASK. Then if you change the --cpu parameter, you don't have to change it in two places
-    sbatch_script --cpu=16 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes $SLURM_CPUS_PER_TASK $FILE'
+    sarray_script --cpu=16 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes $SLURM_CPUS_PER_TASK $FILE'
 
 
 Create a dummy script with a simple command (e.g. 'ls') and then modify the
 script `trim_files.sbatch` later to enter the actual commands:
 
-    sbatch_script --file-pattern='*R1*' --paired-file-pattern='*R2*' --job=trim_files --command='ls'
+    sarray_script --file-pattern='*R1*' --paired-file-pattern='*R2*' --job=trim_files --command='ls'
 
 Even if you don't mention `$FILE` on the command line, it will still be
 available inside your script if you used the `--file-pattern` option.
@@ -160,7 +160,7 @@ For example, given these files:
 
 With this command line:
 
-    sbatch_script --file-pattern='*.A.txt' --paired-file-pattern='*.B.txt' --command='ls' --job='test'
+    sarray_script --file-pattern='*.A.txt' --paired-file-pattern='*.B.txt' --command='ls' --job='test'
 
 Gives the following error:
 
@@ -180,11 +180,12 @@ Christopher Bottoms
 
 # LICENSE
 
-`sbatch_script` by the author is licensed under the Artistic License 2.0. See
+`sarray_script` by the author is licensed under the Artistic License 2.0. See
 a copy of this license at http://www.perlfoundation.org/artistic_license_2_0.
 
 # CHANGES
 
+0.0.28: Renamed sbatch_script to sarray_script. Split off timeout test. Other minor tweaks.  
 0.0.27: Added real adapters instead of "AGAT", because you know people really will copy and paste this code, despite the warning.  
 0.0.26: cleaned up README a little  
 0.0.25: Added Disclaimer and slight formatting improvements to README  

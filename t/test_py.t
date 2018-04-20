@@ -4,33 +4,6 @@ use Test;
 
 chdir 't';
 
-my $test1 = start { # Check what happens with waiting on timed out job
-    my $timed_out_test_dir = 'timed_out_test.dir';
-    mkdir $timed_out_test_dir;
-
-    indir( $timed_out_test_dir, {
-        # Create files
-        my $file1              = file_for 'file1';
-        my $file2              = file_for 'file2';
-        my $expected_file_name = file_for 'expected';
-
-        my $job = 'test_job';
-        my $out = 'result.out';
-
-        my $raw_job_id = qqx{ ../../bin/sbatch_script --run --time=0:00:10 --job=$job --command='sleep 300; cat $file1 $file2 > $out'};
-        my $job_id     = get_jobid($raw_job_id);
-        my $wait_step  = qqx{ sbatch --partition=BioCompute,Lewis --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
-
-        my $result = $out.IO.e;
-
-        is $result, False, 'Timeout correctly killed waiting process';
-
-        shell "rm -rf *";
-    });
-
-    rmdir $timed_out_test_dir;
-};
-
 my $test2 = start { # Test paired files
     my $paired_test_dir = 'paired_test.dir';
     mkdir $paired_test_dir;
@@ -47,7 +20,7 @@ my $test2 = start { # Test paired files
 
         my $job = 'test_job';
 
-        my $raw_job_id = qx{ ../../bin/sbatch_script --run --file-pattern='*_R1_001.fastq' --paired-file-pattern='*_R2_001.fastq' --job=get_seqs --command='awk "\{if (FNR % 4 == 2) print\}" $FILE > forward.$SLURM_ARRAY_TASK_ID.seqs; awk "\{if (FNR % 4 == 2) print\}" $PAIRED_FILE > reverse.$SLURM_ARRAY_TASK_ID.seqs; '};
+        my $raw_job_id = qx{ ../../bin/sarray_script --time=00:02:00 --run --file-pattern='*_R1_001.fastq' --paired-file-pattern='*_R2_001.fastq' --job=get_seqs --command='awk "\{if (FNR % 4 == 2) print\}" $FILE > forward.$SLURM_ARRAY_TASK_ID.seqs; awk "\{if (FNR % 4 == 2) print\}" $PAIRED_FILE > reverse.$SLURM_ARRAY_TASK_ID.seqs; '};
         my $job_id     = get_jobid($raw_job_id);
         my $wait_step  = qqx{ sbatch --partition=BioCompute,Lewis --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
 
@@ -78,7 +51,7 @@ my $test3 = start { # Test basic
         my $job = 'test_job';
         my $out = 'result.out';
 
-        my $raw_job_id = qqx{ ../../bin/sbatch_script --run --job=$job --command='cat $file1 $file2 > $out'};
+        my $raw_job_id = qqx{ ../../bin/sarray_script --time=00:02:00 --run --job=$job --command='cat $file1 $file2 > $out'};
         my $job_id     = get_jobid($raw_job_id);
         my $wait_step  = qqx{ sbatch --partition=BioCompute,Lewis --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
 
@@ -109,7 +82,7 @@ my $test4 = start { # Test prefix extraction
 
         my $job = 'test4';
 
-        my $raw_job_id = qx{ ../../bin/sbatch_script --run --file-pattern='*_R1_001.fastq' --paired-file-pattern='*_R2_001.fastq' --job=check_prefixes --command='echo "$FILE_PREFIX" > temp_prefix_$FILE_PREFIX.txt'};
+        my $raw_job_id = qx{ ../../bin/sarray_script --time=00:02:00 --run --file-pattern='*_R1_001.fastq' --paired-file-pattern='*_R2_001.fastq' --job=check_prefixes --command='echo "$FILE_PREFIX" > temp_prefix_$FILE_PREFIX.txt'};
         my $job_id     = get_jobid($raw_job_id);
         my $wait_step  = qqx{ sbatch --partition=BioCompute,Lewis --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
 
@@ -123,7 +96,7 @@ my $test4 = start { # Test prefix extraction
     rmdir $prefix_test_dir;
 };
 
-await($test1, $test2, $test3, $test4);
+await($test2, $test3, $test4);
 
 done-testing;
 
@@ -200,7 +173,7 @@ sub get_jobid ($string is copy) {
     $string.=chomp;
 
     # Extract jobid
-    if $string ~~ /^ .* \s (\d+) \s* \\ / {
+    if $string ~~ /^ .* \s (\d+) \s* $ / {
         my $jobid = $0;
         return $jobid;
     }

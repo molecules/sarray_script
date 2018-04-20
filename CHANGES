@@ -1,3 +1,4 @@
+0.0.28: Renamed sbatch_script to sarray_script. Split off timeout test. Other minor tweaks.  
 0.0.27: Added real adapters instead of "AGAT", because you know people really will copy and paste this code, despite the warning.  
 0.0.26: cleaned up README a little  
 0.0.25: Added Disclaimer and slight formatting improvements to README  
