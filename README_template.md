@@ -4,25 +4,118 @@
 
 SLURM helper utility for creating sbatch scripts from the command line.  
 
-## Synopsis
-
-    sbatch_script --cpu=4 --mem=10G job_name 'ls > ls.txt'
-
-    # Gzip all files in the directory using a SLURM Array
-    sbatch_script --sarray-file-pattern='fastq$' gzip_files 'gzip $FILE'
-
-    # Get sequence headers from each FASTQ file
-    sbatch_script --sarray-file-pattern='.fastq.gz$' get_headers 'zcat $FILE | awk "{if (FNR % 4 == 1) print}" > $FILE.headers'
-
-## Details
-
-    $FILE            (available if using --sarray-file-pattern)
-    $PAIRED_FILE     (available if using --sarray-paired-file-pattern)
-    $FILENAME_PREFIX (available if using --sarray-paired-file-pattern)
-
 # Version
 
 VERSION-PLACEHOLDER
+
+## Synopsis
+
+    # Simple quick script generation
+    sbatch_script --cpu=4 --mem=10G --job=job_name --command='ls > ls.txt'
+
+    # Simple quick script generation with immediate submission (using the --run flag)
+    sbatch_script --run --cpu=4 --mem=10G --job=job_name --command='ls > ls.txt'
+
+    # Compress all "fastq" files in the directory in parallel using a SLURM Array
+    sbatch_script --cpu=32 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes 32 $FILE'
+
+
+    # Get sequence headers from each FASTQ file
+    sbatch_script --file-pattern='*.fastq.gz' --job=get_headers --command='zcat $FILE | awk "{if (FNR % 4 == 1) print}" > $FILE.headers'
+
+    # Create a dummy script that contains the envir
+
+## Processing multiple files in parallel
+
+WARNING: There are quite a few assumptions when using the features described below. Please read the following and be sure you understand it. 
+
+Do you have multiple files which you want to process in the same way?
+
+If you give `sbatch_script` a file pattern using the `--file_pattern` flag, then, it will create a script that will run a slurm array with as many tasks as there are matching files in the directory. 
+PLEASE NOTE that this script will only work for the files present in the directory at the time the sbatch_script was used to create the initial script. This is because it embeds the filenames directly into the script.
+Inside the BASH script so generated, is available the variable $FILE, which represents the file processed by a single Slrum array task.
+
+The following $BASH environment variables are created and available inside the
+sbatch script created by `sbatch_script` if the given parameters are used:
+
+Available with --file-pattern flag:
+`$FILE` File processed by a single Slurm array task .
+
+Available with --paired-file-pattern flag:
+`$PAIRED_FILE` "Paired" file processed by the same Slurm array task as the file represented by "$FILE".
+`$FILE_PREFIX` It is assumed that $FILE and $PAIRED_FILE have a common prefix that will be unique in the directory. That prefix is computed and provided as `$FILE_PREFIX`. Enforcing uniqueness of this "common prefix" has not been done. The following situation would work:
+
+## Processing multiple paired files simple example
+Given these files:
+
+    fooA.txt
+    fooB.txt
+    barA.txt
+    barB.txt
+
+The following script would combine them:
+
+    sbatch_script --run --file-pattern='_A.txt' --paired-file-pattern='_B.txt' --job=combine_files --command='cat $FILE $PAIRED_FILE > $FILE_PREFIX.combined.txt'
+
+When all of the jobs finished running, the following would be the resulting files:
+    foo.combined.txt
+    bar.combined.txt
+
+## Real life example using paired files
+
+Given these files:
+
+    sampA_for.fastq.gz  
+    sampA_rev.fastq.gz  
+    sampB_for.fastq.gz
+    sampB_rev.fastq.gz
+
+The following command would create a script to trim them in pairs. (Please
+know what you are doing and don't simply copy and paste this. Please. For
+example, "AGAT" is waaaaaay too short for an adapter sequence.):
+
+    sbatch_script --file-pattern='*R1*' --paired-file-pattern='*R2*' --job=trim_files --command='cutadapt -a AGAT -A AGAT --output=${FILE_PREFIX}_for.fastq.gz --paired-output=${FILE_PREFIX}_rev.fastq.gz'
+
+Or using backslashed newlines to make the command line seem more sane:
+
+    sbatch_script \
+        --file-pattern='*R1*' \
+        --paired-file-pattern='*R2*' \
+        --job=trim_files \
+        --command='cutadapt \
+                    -a AGAT \
+                    -A AGAT \
+                    --output=${FILE_PREFIX}_for.fastq.gz \
+                    --paired-output=${FILE_PREFIX}_rev.fastq.gz'
+
+# TRICKS
+
+Take advantage of SLURM environment variables
+
+    # Instead of 
+    sbatch_script --cpu=32 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes 32 $FILE'
+
+    # Use $SLURM_CPUS_PER_TASK. Then if you change the --cpu parameter, you don't have to change it in two places
+    sbatch_script --cpu=32 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes $SLURM_CPUS_PER_TASK $FILE'
+
+
+Create a dummy script with a simple command (e.g. 'ls') and then modify the
+script `trim_files.sbatch` later to enter the actual commands:
+
+    sbatch_script --file-pattern='*R1*' --paired-file-pattern='*R2*' --job=trim_files --command='ls'
+
+Even if you don't mention `$FILE` on the command line, it will still be
+available inside your script if you used the `--file-pattern` option. 
+
+Even if you don't mentioned `$PAIRED_FILE` or `$FILE_PREFIX` on the command
+line, they will still be available inside your script if you used the
+`--paired-file-pattern` option.
+
+# GOTCHAS
+
+The coomputed 
+
+`sbatch_script` has not been tested for creating scripts for MPI jobs. 
 
 # Dependencies:  
 
@@ -32,17 +125,27 @@ Python 3.6 or later (https://www.python.org/)
 
 slurm (https://slurm.schedmd.com/)  
 
+
 # DIAGNOSTICS
 
-If --sarray-file-pattern and --sarray-paired-file-pattern are both used but
+If --file-pattern and --paired-file-pattern are both used but
 they generate different numbers of files, then the following error will be
 seen:
 
-    ERROR: --sarray-file-pattern and --sarray-paired-file-pattern produce 
+    ERROR: --file-pattern and --paired-file-pattern produce 
            different numbers of files. List of 'File name (paired file name)':
 
 Followed by a list of the files showing what it thinks the pairs are and which
 seem to be missing.
+
+# AUTHOR
+
+Christopher Bottoms
+
+# LICENSE
+
+sbatch_script by the author is licensed under the Artistic License 2.0. See
+a copy of this license at http://www.perlfoundation.org/artistic_license_2_0.
 
 # CHANGES
 

@@ -47,7 +47,7 @@ my $test2 = start { # Test paired files
 
         my $job = 'test_job';
 
-        my $raw_job_id = qx{ ../../bin/sbatch_script --run --file_pattern='*_R1_001.fastq' --paired_file_pattern='*_R2_001.fastq' --job=get_seqs --command='awk "\{if (FNR % 4 == 2) print\}" $FILE > forward.$SLURM_ARRAY_TASK_ID.seqs; awk "\{if (FNR % 4 == 2) print\}" $PAIRED_FILE > reverse.$SLURM_ARRAY_TASK_ID.seqs; '};
+        my $raw_job_id = qx{ ../../bin/sbatch_script --run --file-pattern='*_R1_001.fastq' --paired-file-pattern='*_R2_001.fastq' --job=get_seqs --command='awk "\{if (FNR % 4 == 2) print\}" $FILE > forward.$SLURM_ARRAY_TASK_ID.seqs; awk "\{if (FNR % 4 == 2) print\}" $PAIRED_FILE > reverse.$SLURM_ARRAY_TASK_ID.seqs; '};
         my $job_id     = get_jobid($raw_job_id);
         my $wait_step  = qqx{ sbatch --partition=BioCompute,Lewis --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
 
@@ -57,7 +57,7 @@ my $test2 = start { # Test paired files
             my $expected1 = text_for('expected_seq1');
             my $expected2 = text_for('expected_seq2');
             is $result1, $expected1, 'Good results for ' ~   '$FILE when SLURM_ARRAY_TASK_ID=' ~ $i;
-            is $result2, $expected2, 'Good results for $PAIRED-FILE when SLURM_ARRAY_TASK_ID=' ~ $i;
+            is $result2, $expected2, 'Good results for $PAIRED_FILE when SLURM_ARRAY_TASK_ID=' ~ $i;
         }
 
         shell 'rm -rf *';
@@ -109,7 +109,7 @@ my $test4 = start { # Test prefix extraction
 
         my $job = 'test4';
 
-        my $raw_job_id = qx{ ../../bin/sbatch_script --run --file_pattern='*_R1_001.fastq' --paired_file_pattern='*_R2_001.fastq' --job=check_prefixes --command='echo "$FILE_PREFIX" > temp_prefix_$FILE_PREFIX.txt'};
+        my $raw_job_id = qx{ ../../bin/sbatch_script --run --file-pattern='*_R1_001.fastq' --paired-file-pattern='*_R2_001.fastq' --job=check_prefixes --command='echo "$FILE_PREFIX" > temp_prefix_$FILE_PREFIX.txt'};
         my $job_id     = get_jobid($raw_job_id);
         my $wait_step  = qqx{ sbatch --partition=BioCompute,Lewis --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
 

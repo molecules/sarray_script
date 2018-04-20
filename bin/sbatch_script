@@ -163,19 +163,20 @@ if __name__ == '__main__':
     parser.add_argument('--mem',            type=str, help='Total RAM to allocate (default: "10G")', default='10G')
     parser.add_argument('--time',           type=str, help='Time limit (default: "1-00:00:00", meaning 1 day, 0 hours, 00 minutes, 00 seconds)', default='1-00:00:00')
     parser.add_argument('--partition',      type=str, help='partition to use', default='BioCompute')
-    parser.add_argument('--job_files_dir',  type=str, help='job log directory (default: "job_files.dir")', default='job_files.dir')
+    parser.add_argument('--job-files-dir',  type=str, help='job log directory (default: "job_files.dir")', default='job_files.dir')
 
     parser.add_argument('--dependency',   type=str, help='list of jobs that must finish before this one starts')
-    parser.add_argument('--file_pattern', type=str,
+    parser.add_argument('--file-pattern', type=str,
             help='Pattern of files to include in sarray. With this option, you can use $FILE in your script to refer to a file. (Required if --paired_file_pattern is used)',
-            required=any(re.search('paired_file_pattern',argument) for argument in sys.argv)
+            required=any(re.search('paired-file-pattern',argument) for argument in sys.argv)
     )
-    parser.add_argument('--paired_file_pattern', type=str,  help='Pattern of paired files to include in sarray (use $PAIRED_FILE in your script to refer to a paired file')
+    parser.add_argument('--paired-file-pattern', type=str,  help='Pattern of paired files to include in sarray (use $PAIRED_FILE in your script to refer to a paired file')
     parser.add_argument('--run', help="Run script immediately after creating it.", action='store_true')
-    parser.add_argument('--sarray_limit',        type=int,  help='Number of simultaneous jobs to allow to run at the same time')
+    parser.add_argument('--sarray-limit',        type=int,  help='Number of simultaneous jobs to allow to run at the same time')
 
     args = parser.parse_args()
 
+    # equivalent of "mkdir -p"
     pathlib.Path(args.job_files_dir).mkdir(parents=True, exist_ok=True)
 
     job_script_name = job_script_name_for(args.job)
