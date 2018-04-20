@@ -20,6 +20,8 @@ sub MAIN ( $message, :$debug=0, :$zef=False ) {
 
     $readme ~= $changes;
 
+    $readme ~= slurp 'DISCLAIMER.md';
+
     verbose $readme;
 
     spurt('CHANGES', $changes)      unless $DEBUG;

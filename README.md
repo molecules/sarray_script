@@ -1,14 +1,16 @@
-# sbatch_script
+# NAME
 
-## Description
+sbatch_script
+
+## DESCRIPTION
 
 SLURM helper utility for creating sbatch scripts from the command line.
 
-# Version
+# VERSION
 
-0.0.24
+0.0.25
 
-## Synopsis
+# SYNOPSIS
 
     # Simple quick script generation
     sbatch_script --cpu=4 --mem=10G --job=job_name --command='ls > ls.txt'
@@ -53,6 +55,16 @@ Available with --paired-file-pattern flag:
 `$PAIRED_FILE` "Paired" file processed by the same Slurm array task as the file represented by "$FILE".  
 `$FILE_PREFIX` It is assumed that $FILE and $PAIRED_FILE have a common prefix that will be unique in the directory. That prefix is computed and provided as `$FILE_PREFIX`. Enforcing uniqueness of this "common prefix" has not been done. The following situation would work:  
 
+## (Simple example, one file at a time)
+Given these files:
+
+    foo.txt
+    bar.txt
+
+The following script would calculate the md5sum of each one:
+
+    sbatch_script --run --file-pattern='*.txt' --job=calc_md5sum --command='md5sum $FILE > $FILE.md5sum'
+
 ## Processing multiple paired files simple example  
 Given these files:  
 
@@ -63,7 +75,7 @@ Given these files:
 
 The following script would combine them:  
 
-    sbatch_script --run --file-pattern='_A.txt' --paired-file-pattern='_B.txt' --job=combine_files --command='cat $FILE $PAIRED_FILE > $FILE_PREFIX.combined.txt'
+    sbatch_script --run --file-pattern='*_A.txt' --paired-file-pattern='*_B.txt' --job=combine_files --command='cat $FILE $PAIRED_FILE > $FILE_PREFIX.combined.txt'
 
 When all of the jobs finished running, the following would be the resulting files:  
     foo.combined.txt
@@ -104,7 +116,7 @@ Take advantage of SLURM environment variables
     sbatch_script --cpu=32 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes 32 $FILE'
 
     # Use $SLURM_CPUS_PER_TASK. Then if you change the --cpu parameter, you don't have to change it in two places
-    sbatch_script --cpu=32 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes $SLURM_CPUS_PER_TASK $FILE'
+    sbatch_script --cpu=16 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes $SLURM_CPUS_PER_TASK $FILE'
 
 
 Create a dummy script with a simple command (e.g. 'ls') and then modify the
@@ -125,7 +137,7 @@ The coomputed
 
 `sbatch_script` has not been tested for creating scripts for MPI jobs.
 
-# Dependencies:
+# DEPENDENCIES
 
 Linux operating system (tested on CentOS 7)
 
@@ -181,11 +193,12 @@ Christopher Bottoms
 
 # LICENSE
 
-sbatch_script by the author is licensed under the Artistic License 2.0. See
+`sbatch_script` by the author is licensed under the Artistic License 2.0. See
 a copy of this license at http://www.perlfoundation.org/artistic_license_2_0.
 
 # CHANGES
 
+0.0.25: Added Disclaimer and slight formatting improvements to README  
 0.0.24: Improved documentation  
 0.0.23: Long option names use dash instead of underscore (like Linux utilities). Also added more documentation and examples in README.  
 0.0.22: The executable in /bin is now just Python (for this branch)  
@@ -209,3 +222,8 @@ a copy of this license at http://www.perlfoundation.org/artistic_license_2_0.
 0.0.4: Adding repository management tools .add and .commit (optional)  
 0.0.3: Now creating README from template  
 0.0.2: Parallel tests!  
+# DISCLAIMER OF WARRANTY
+
+BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR, OR CORRECTION.
+
+IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.

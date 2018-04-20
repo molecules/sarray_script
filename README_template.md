@@ -1,14 +1,16 @@
-# sbatch_script
+# NAME
 
-## Description
+sbatch_script
+
+## DESCRIPTION
 
 SLURM helper utility for creating sbatch scripts from the command line.
 
-# Version
+# VERSION
 
 VERSION-PLACEHOLDER
 
-## Synopsis
+# SYNOPSIS
 
     # Simple quick script generation
     sbatch_script --cpu=4 --mem=10G --job=job_name --command='ls > ls.txt'
@@ -53,6 +55,16 @@ Available with --paired-file-pattern flag:
 `$PAIRED_FILE` "Paired" file processed by the same Slurm array task as the file represented by "$FILE".  
 `$FILE_PREFIX` It is assumed that $FILE and $PAIRED_FILE have a common prefix that will be unique in the directory. That prefix is computed and provided as `$FILE_PREFIX`. Enforcing uniqueness of this "common prefix" has not been done. The following situation would work:  
 
+## (Simple example, one file at a time)
+Given these files:
+
+    foo.txt
+    bar.txt
+
+The following script would calculate the md5sum of each one:
+
+    sbatch_script --run --file-pattern='*.txt' --job=calc_md5sum --command='md5sum $FILE > $FILE.md5sum'
+
 ## Processing multiple paired files simple example  
 Given these files:  
 
@@ -63,7 +75,7 @@ Given these files:
 
 The following script would combine them:  
 
-    sbatch_script --run --file-pattern='_A.txt' --paired-file-pattern='_B.txt' --job=combine_files --command='cat $FILE $PAIRED_FILE > $FILE_PREFIX.combined.txt'
+    sbatch_script --run --file-pattern='*_A.txt' --paired-file-pattern='*_B.txt' --job=combine_files --command='cat $FILE $PAIRED_FILE > $FILE_PREFIX.combined.txt'
 
 When all of the jobs finished running, the following would be the resulting files:  
     foo.combined.txt
@@ -104,7 +116,7 @@ Take advantage of SLURM environment variables
     sbatch_script --cpu=32 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes 32 $FILE'
 
     # Use $SLURM_CPUS_PER_TASK. Then if you change the --cpu parameter, you don't have to change it in two places
-    sbatch_script --cpu=32 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes $SLURM_CPUS_PER_TASK $FILE'
+    sbatch_script --cpu=16 --file-pattern='*.fastq' --job=pigz_files --command='pigz --processes $SLURM_CPUS_PER_TASK $FILE'
 
 
 Create a dummy script with a simple command (e.g. 'ls') and then modify the
@@ -125,7 +137,7 @@ The coomputed
 
 `sbatch_script` has not been tested for creating scripts for MPI jobs.
 
-# Dependencies:
+# DEPENDENCIES
 
 Linux operating system (tested on CentOS 7)
 
@@ -181,7 +193,7 @@ Christopher Bottoms
 
 # LICENSE
 
-sbatch_script by the author is licensed under the Artistic License 2.0. See
+`sbatch_script` by the author is licensed under the Artistic License 2.0. See
 a copy of this license at http://www.perlfoundation.org/artistic_license_2_0.
 
 # CHANGES
