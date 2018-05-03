@@ -9,7 +9,7 @@ arrays. Also works for paired files (like paired-end FASTQ files).
 
 # VERSION
 
-0.0.32
+0.0.33
 
 # SYNOPSIS
 
@@ -21,6 +21,9 @@ arrays. Also works for paired files (like paired-end FASTQ files).
 
     # Then for the bioinformaticians out there, work on those paired-end sequences:
     sarray_script --file-pattern='*R1*' --paired-pattern='*R2*' --job=trim_files --command='cutadapt -a AGAT... -A AGAT... --output=${FILE_PREFIX}_for.fastq.gz --paired-output=${FILE_PREFIX}_rev.fastq.gz'
+
+    # Or, if you needed to do a little fancy coding as well (e.g. print "Hello world" before running cutadapt):
+    sarray_script --exe=perl --file-pattern='*R1*' --paired-pattern='*R2*' --job=trim_files --command='print "Hello World\n"; system("cutadapt -a AGAT... -A AGAT... --output=${FILE_PREFIX}_for.fastq.gz --paired-output=${FILE_PREFIX}_rev.fastq.gz");'
 
 
 ## Processing multiple files in parallel
@@ -122,10 +125,10 @@ script `trim_files.sbatch` later to enter the actual commands:
 
     sarray_script --file-pattern='*R1*' --paired-pattern='*R2*' --job=trim_files --command='ls'
 
-Even if you don't mention `$FILE` on the command line, it will still be
+Even if you have not mentioned `$FILE` on the command line, it will still be
 available inside your script if you used the `--file-pattern` option.
 
-Even if you don't mentioned `$PAIRED_FILE` or `$FILE_PREFIX` on the command
+Even if you have not mentioned `$PAIRED_FILE` or `$FILE_PREFIX` on the command
 line, they will still be available inside your script if you used the
 `--paired-pattern` option.
 
@@ -184,6 +187,7 @@ a copy of this license at http://www.perlfoundation.org/artistic_license_2_0.
 
 # CHANGES
 
+0.0.33: Documentation and whitespace tweaks  
 0.0.32: Now supports Perl-based sarray scripts  
 0.0.31: Python code compliant with "pycodestyle --max-line-length=99"  
 0.0.30: changed long name of paired option from --paired-file-pattern to --paired-pattern  

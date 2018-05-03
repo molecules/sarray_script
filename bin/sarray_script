@@ -124,11 +124,11 @@ def sbatch_header(args):
 
             # WARNING: Below is actually body, not header
             if args.exe == 'bash':
-                header += 'PAIRED_FILES=(' + space_join(paired_file_names) + ")\n\n"
-                header += 'PAIRED_FILE=${PAIRED_FILES[$SLURM_ARRAY_TASK_ID]}' + "\n"
+                header += 'PAIRED_FILES=(' + space_join(paired_file_names) + ")\n"
+                header += 'PAIRED_FILE=${PAIRED_FILES[$SLURM_ARRAY_TASK_ID]}' + "\n\n"
             elif args.exe == 'perl':
-                header += 'my @PAIRED_FILES=qw(' + space_join(paired_file_names) + ");\n\n"
-                header += 'my $PAIRED_FILE=$PAIRED_FILES[$TASK_ID];' + "\n"
+                header += 'my @PAIRED_FILES=qw(' + space_join(paired_file_names) + ");\n"
+                header += 'my $PAIRED_FILE=$PAIRED_FILES[$TASK_ID];' + "\n\n"
 
 
             filename_prefixes = []
@@ -137,24 +137,24 @@ def sbatch_header(args):
                 filename_prefixes.append(prefix)
 
             if args.exe == 'bash':
-                header += 'FILE_PREFIXES=(' + space_join(filename_prefixes) + ")\n\n"
-                header += 'FILE_PREFIX=${FILE_PREFIXES[$SLURM_ARRAY_TASK_ID]}' + "\n"
+                header += 'FILE_PREFIXES=(' + space_join(filename_prefixes) + ")\n"
+                header += 'FILE_PREFIX=${FILE_PREFIXES[$SLURM_ARRAY_TASK_ID]}' + "\n\n"
             elif args.exe == 'perl':
-                header += 'my @FILE_PREFIXES=qw(' + space_join(filename_prefixes) + ");\n\n"
-                header += 'my $FILE_PREFIX=$FILE_PREFIXES[$TASK_ID];' + "\n"
+                header += 'my @FILE_PREFIXES=qw(' + space_join(filename_prefixes) + ");\n"
+                header += 'my $FILE_PREFIX=$FILE_PREFIXES[$TASK_ID];' + "\n\n"
     else:
         # No file pattern means this degenerates into an sarray with only one index
         header += '#SBATCH --array=0-0'
 
     if args.file_pattern:
         if args.exe == 'bash':
-            header += 'FILES=(' + space_join(file_names) + ")\n\n"
-            header += 'FILE=${FILES[$SLURM_ARRAY_TASK_ID]}' + "\n"
+            header += 'FILES=(' + space_join(file_names) + ")\n"
+            header += 'FILE=${FILES[$SLURM_ARRAY_TASK_ID]}' + "\n\n"
             header += "# list all loaded modules\n"
             header += "module list\n"
         if args.exe == 'perl':
-            header += 'my @FILES=qw(' + space_join(file_names) + ");\n\n"
-            header += 'my $FILE=$FILES[$TASK_ID];' + "\n"
+            header += 'my @FILES=qw(' + space_join(file_names) + ");\n"
+            header += 'my $FILE=$FILES[$TASK_ID];' + "\n\n"
 
     return header
 

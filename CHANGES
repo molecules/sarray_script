@@ -1,3 +1,4 @@
+0.0.33: Documentation and whitespace tweaks  
 0.0.32: Now supports Perl-based sarray scripts  
 0.0.31: Python code compliant with "pycodestyle --max-line-length=99"  
 0.0.30: changed long name of paired option from --paired-file-pattern to --paired-pattern  
