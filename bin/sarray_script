@@ -11,7 +11,7 @@ import os
 import glob
 import subprocess
 
-def common_prefix_for (a, b):
+def common_prefix_for(a, b):
     end_idx=1
     current_substring = a[0:end_idx]
     longest_substring = ''
@@ -21,14 +21,14 @@ def common_prefix_for (a, b):
         current_substring = a[0:end_idx]
     return longest_substring
 
-def replace_nonword_characters (name):
+def replace_nonword_characters(name):
 
     name = re.sub(r'\W','_',name)
     return name
 
 # Create script name based on the job name
 # If needed, version the script name to avoid overwriting previous batch files
-def job_script_name_for (job):
+def job_script_name_for(job):
     job_name    = replace_nonword_characters(job)
     version     = 0
     script_name = f"{job_name}.sarray.sh"
@@ -41,11 +41,11 @@ def job_script_name_for (job):
 
     return script_name
 
-def sorted_file_names_matching (pattern):
+def sorted_file_names_matching(pattern):
     files = sorted(glob.glob(pattern))
     return files
 
-def batch_header(args):
+def common_header(args):
 
     header = f'''\
 #!/bin/env bash
@@ -66,6 +66,12 @@ def batch_header(args):
         header += f"#SBATCH -o {args.job_files_dir}/job.oe_%A_%a\n"
     else:
         header += f"#SBATCH -o {args.job_files_dir}/job.oe_%j\n"
+
+    return header
+
+
+def bash_header(args):
+    header = common_header(args)
 
     if args.file_pattern:
         file_names = sorted_file_names_matching(args.file_pattern)
@@ -133,12 +139,11 @@ module list
 '''
     return header
 
-
 # Create the text for a batch script
-def batch_code (args):
+def batch_code(args):
 
     # Add batch header
-    code = batch_header(args)
+    code = bash_header(args)
     code += "\n"
 
     # Add body to code

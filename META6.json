@@ -2,7 +2,7 @@
 "perl"         : "6.c",
 "name"         : "sarray_script",
 "license"      : "Artistic-2.0",
-"version"      : "0.0.28",
+"version"      : "0.0.29",
 "auth"         : "github:molecules",
 "authors"      : ["Chrisotpher Bottoms"],
 "description"  : "Create shell scripts that process whole directories of files using SLURM arrays. Also works for paired files (like paired-end FASTQ files). ",

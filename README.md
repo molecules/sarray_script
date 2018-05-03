@@ -9,7 +9,7 @@ arrays. Also works for paired files (like paired-end FASTQ files).
 
 # VERSION
 
-0.0.28
+0.0.29
 
 # SYNOPSIS
 
@@ -185,6 +185,7 @@ a copy of this license at http://www.perlfoundation.org/artistic_license_2_0.
 
 # CHANGES
 
+0.0.29: Internal refactor  
 0.0.28: Renamed sbatch_script to sarray_script. Split off timeout test. Other minor tweaks.  
 0.0.27: Added real adapters instead of "AGAT", because you know people really will copy and paste this code, despite the warning.  
 0.0.26: cleaned up README a little  
