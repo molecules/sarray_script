@@ -9,7 +9,7 @@ arrays. Also works for paired files (like paired-end FASTQ files).
 
 # VERSION
 
-0.0.31
+0.0.32
 
 # SYNOPSIS
 
@@ -184,6 +184,7 @@ a copy of this license at http://www.perlfoundation.org/artistic_license_2_0.
 
 # CHANGES
 
+0.0.32: Now supports Perl-based sarray scripts  
 0.0.31: Python code compliant with "pycodestyle --max-line-length=99"  
 0.0.30: changed long name of paired option from --paired-file-pattern to --paired-pattern  
 0.0.29: Internal refactor  

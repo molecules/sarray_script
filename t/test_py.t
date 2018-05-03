@@ -1,10 +1,11 @@
 #!/bin/env perl6
 
 use Test;
+plan 10;
 
 chdir 't';
 
-my $test2 = start { # Test paired files
+my $test5 = start { # Test paired files
     my $paired_test_dir = 'paired_test.dir';
     mkdir $paired_test_dir;
 
@@ -31,6 +32,41 @@ my $test2 = start { # Test paired files
             my $expected2 = text_for('expected_seq2');
             is $result1, $expected1, 'Good results for ' ~   '$FILE when SLURM_ARRAY_TASK_ID=' ~ $i;
             is $result2, $expected2, 'Good results for $PAIRED_FILE when SLURM_ARRAY_TASK_ID=' ~ $i;
+        }
+
+        shell 'rm -rf *';
+    });
+    rmdir $paired_test_dir;
+};
+
+
+my $test2 = start { # Test paired files (using perl)
+    my $paired_test_dir = 'perl_test.dir';
+    mkdir $paired_test_dir;
+
+    indir( $paired_test_dir, {
+
+        my @files1;
+        my @files2;
+
+        for 11 .. 12 -> $i {
+            @files1.append(file_for('fastq1', :filename("file_{$i}_R1_001.fastq")));
+            @files2.append(file_for('fastq2', :filename("file_{$i}_R2_001.fastq")));
+        }
+
+        my $job = 'test_job';
+
+        my $raw_job_id = qx{ ../../bin/sarray_script --exe=perl --time=00:02:00 --run --file-pattern='*_R1_001.fastq' --paired-pattern='*_R2_001.fastq' --job=get_seqs --command='`awk "\{if (FNR % 4 == 2) print\}" $FILE > forward.$TASK_ID.seqs`;`awk "\{if (FNR % 4 == 2) print\}" $PAIRED_FILE > reverse.$TASK_ID.seqs`'};
+        my $job_id     = get_jobid($raw_job_id);
+        my $wait_step  = qqx{ sbatch --partition=BioCompute,Lewis --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
+
+        for 0 .. 1 -> $i {
+            my $result1   = slurp "forward.$i.seqs";
+            my $result2   = slurp "reverse.$i.seqs";
+            my $expected1 = text_for('expected_seq1');
+            my $expected2 = text_for('expected_seq2');
+            is $result1, $expected1, 'Good results for ' ~   '$FILE when TASK_ID=' ~ $i ~ " (exe=perl)";
+            is $result2, $expected2, 'Good results for $PAIRED_FILE when TASK_ID=' ~ $i ~ " (exe=perl)";
         }
 
         shell 'rm -rf *';
@@ -96,9 +132,7 @@ my $test4 = start { # Test prefix extraction
     rmdir $prefix_test_dir;
 };
 
-await($test2, $test3, $test4);
-
-done-testing;
+await($test2, $test3, $test4, $test5);
 
 sub text_for ($section) {
     my %text_for = %(

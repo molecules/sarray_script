@@ -1,6 +1,6 @@
 #!/cluster/rcss-spack/opt/spack/linux-centos7-x86_64/gcc-4.8.5/python-3.6.0-m4jxztdzl45jsmtsx3vmlag5rcs4tm74/bin/python3
 # sarray_script.py
-# NOTE:This requires python 3.6 an later (for use of f-strings)
+# NOTE:This requires python 3.6 or later (for use of f-strings)
 
 import argparse
 import sys
@@ -12,6 +12,9 @@ import subprocess
 
 
 def common_prefix_for(a, b):
+    # Preempt infinite while loop if a and b are identical
+    if a == b:
+        return a
     end_idx = 1
     current_substring = a[0:end_idx]
     longest_substring = ''
@@ -33,12 +36,13 @@ def replace_nonword_characters(name):
 def job_script_name_for(job):
     job_name = replace_nonword_characters(job)
     version = 0
-    script_name = f"{job_name}.sarray.sh"
+
+    script_name = f"{job_name}.sarray"
 
     # Increment the version number until a unique script name is created
     while pathlib.Path(script_name).is_file():
         version += 1
-        script_name = f"{job_name}.sarray.sh.{version}"
+        script_name = f"{job_name}.sarray.{version}"
 
     return script_name
 
@@ -48,10 +52,13 @@ def sorted_file_names_matching(pattern):
     return files
 
 
-def sbatch_header(args):
-    header = f"#!/bin/env {args.exe}\n"
+def space_join(x):
+    return ' '.join(x)
 
-    header += f'''\
+
+def sbatch_header(args):
+    header = f'''\
+#!/bin/env {args.exe}
 #SBATCH --job-name {args.job}
 #SBATCH --mem {args.mem}
 #SBATCH --cpus-per-task {args.cpu}
@@ -78,6 +85,10 @@ def sbatch_header(args):
             header += f"%{args.simultaneous}"  # no newline
 
         header += "\n"
+
+        # No more actual "header" after this point (if args.file_pattern)
+        if args.exe == 'perl':
+            header += "my $TASK_ID = $ENV{SLURM_ARRAY_TASK_ID};\n"
 
         # If paired, check that there are equal numbers of paired files
         if args.paired_pattern:
@@ -112,29 +123,39 @@ def sbatch_header(args):
                 exit(1)
 
             # WARNING: Below is actually body, not header
-            header += f"PAIRED_FILES=({ ' '.join(paired_file_names) } )\n\n"
-            header += 'PAIRED_FILE=${PAIRED_FILES[$SLURM_ARRAY_TASK_ID]}' + "\n"
+            if args.exe == 'bash':
+                header += 'PAIRED_FILES=(' + space_join(paired_file_names) + ")\n\n"
+                header += 'PAIRED_FILE=${PAIRED_FILES[$SLURM_ARRAY_TASK_ID]}' + "\n"
+            elif args.exe == 'perl':
+                header += 'my @PAIRED_FILES=qw(' + space_join(paired_file_names) + ");\n\n"
+                header += 'my $PAIRED_FILE=$PAIRED_FILES[$TASK_ID];' + "\n"
+
 
             filename_prefixes = []
             for file_, paired_file in zip(file_names, paired_file_names):
                 prefix = common_prefix_for(file_, paired_file)
                 filename_prefixes.append(prefix)
 
-            header += 'FILE_PREFIXES=(' + ' '.join(filename_prefixes) + ")\n\n"
-            header += 'FILE_PREFIX=${FILE_PREFIXES[$SLURM_ARRAY_TASK_ID]}' + "\n"
+            if args.exe == 'bash':
+                header += 'FILE_PREFIXES=(' + space_join(filename_prefixes) + ")\n\n"
+                header += 'FILE_PREFIX=${FILE_PREFIXES[$SLURM_ARRAY_TASK_ID]}' + "\n"
+            elif args.exe == 'perl':
+                header += 'my @FILE_PREFIXES=qw(' + space_join(filename_prefixes) + ");\n\n"
+                header += 'my $FILE_PREFIX=$FILE_PREFIXES[$TASK_ID];' + "\n"
     else:
         # No file pattern means this degenerates into an sarray with only one index
         header += '#SBATCH --array=0-0'
 
     if args.file_pattern:
-        header += f"FILES=({' '.join(file_names)})\n\n"
-        header += 'FILE=${FILES[$SLURM_ARRAY_TASK_ID]}' + "\n"
+        if args.exe == 'bash':
+            header += 'FILES=(' + space_join(file_names) + ")\n\n"
+            header += 'FILE=${FILES[$SLURM_ARRAY_TASK_ID]}' + "\n"
+            header += "# list all loaded modules\n"
+            header += "module list\n"
+        if args.exe == 'perl':
+            header += 'my @FILES=qw(' + space_join(file_names) + ");\n\n"
+            header += 'my $FILE=$FILES[$TASK_ID];' + "\n"
 
-    header += f'''\
-
-# list all loaded modules
-module list
-'''
     return header
 
 
@@ -148,7 +169,7 @@ def batch_code(args):
     # Add body to code
 
     # separate statements into separate lines
-    lines = re.sub(r'\s*;\s*', "\n", args.command)
+    lines = re.sub(r'\s*;\s*', ";\n", args.command)
 
     code += lines
 
