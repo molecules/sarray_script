@@ -1,7 +1,6 @@
 #!/cluster/rcss-spack/opt/spack/linux-centos7-x86_64/gcc-4.8.5/python-3.6.0-m4jxztdzl45jsmtsx3vmlag5rcs4tm74/bin/python3
-#sarray_script.py
-
-#NOTE:This requires python 3.6 an later (for use of f-strings)
+# sarray_script.py
+# NOTE:This requires python 3.6 an later (for use of f-strings)
 
 import argparse
 import sys
@@ -11,28 +10,30 @@ import os
 import glob
 import subprocess
 
+
 def common_prefix_for(a, b):
-    end_idx=1
+    end_idx = 1
     current_substring = a[0:end_idx]
     longest_substring = ''
     while b.startswith(current_substring):
-        longest_substring=current_substring
+        longest_substring = current_substring
         end_idx += 1
         current_substring = a[0:end_idx]
     return longest_substring
 
+
 def replace_nonword_characters(name):
 
-    name = re.sub(r'\W','_',name)
+    name = re.sub(r'\W', '_', name)
     return name
+
 
 # Create script name based on the job name
 # If needed, version the script name to avoid overwriting previous batch files
 def job_script_name_for(job):
-    job_name    = replace_nonword_characters(job)
-    version     = 0
+    job_name = replace_nonword_characters(job)
+    version = 0
     script_name = f"{job_name}.sarray.sh"
-
 
     # Increment the version number until a unique script name is created
     while pathlib.Path(script_name).is_file():
@@ -41,13 +42,16 @@ def job_script_name_for(job):
 
     return script_name
 
+
 def sorted_file_names_matching(pattern):
     files = sorted(glob.glob(pattern))
     return files
 
-def common_header(args):
 
-    header = f'''\
+def sbatch_header(args):
+    header = f"#!/bin/env {args.exe}\n"
+
+    header += f'''\
 #SBATCH --job-name {args.job}
 #SBATCH --mem {args.mem}
 #SBATCH --cpus-per-task {args.cpu}
@@ -66,41 +70,30 @@ def common_header(args):
     else:
         header += f"#SBATCH -o {args.job_files_dir}/job.oe_%j\n"
 
-    return header
-
-
-def bash_header(args):
-    header = "#!/bin/env bash\n"
-    header += common_header(args)
-
     if args.file_pattern:
         file_names = sorted_file_names_matching(args.file_pattern)
-        header += f"#SBATCH --array=0-{len(file_names) - 1}"
+        header += f"#SBATCH --array=0-{len(file_names) - 1}"  # no newline
 
         if args.simultaneous:
-            header += f"%{args.simultaneous}"
+            header += f"%{args.simultaneous}"  # no newline
 
-        # Add newline (didn't put it on earlier in case we needed to wait for simultaneous
         header += "\n"
 
-        #WARNING: Below is actually body, not header
-        header += f"FILES=({' '.join(file_names)})\n\n"
-        header += 'FILE=${FILES[$SLURM_ARRAY_TASK_ID]}' + "\n"
-
         # If paired, check that there are equal numbers of paired files
-        if args.paired_file_pattern:
-            paired_file_names = sorted_file_names_matching(args.paired_file_pattern)
+        if args.paired_pattern:
+            paired_file_names = sorted_file_names_matching(args.paired_pattern)
 
             length_file_names = len(file_names)
-            length_paired    = len(paired_file_names)
+            length_paired = len(paired_file_names)
 
             if length_file_names != length_paired:
                 print("\nERROR:")
-                print(f"--file_pattern='{args.file_pattern}' and --paired_file_pattern='{args.paired_file_pattern}' ")
+                print(f"--file_pattern='{args.file_pattern}' and ",)
+                print(f"--paired_pattern='{args.paired_pattern}' ",)
                 print("produce  different numbers of files:'\n")
 
                 max_index = max(length_file_names, length_paired)
-                for index in range(0,max_index):
+                for index in range(0, max_index):
                     pair_report = ''
 
                     if index < length_file_names:
@@ -118,6 +111,7 @@ def bash_header(args):
                 print("\nExiting ...")
                 exit(1)
 
+            # WARNING: Below is actually body, not header
             header += f"PAIRED_FILES=({ ' '.join(paired_file_names) } )\n\n"
             header += 'PAIRED_FILE=${PAIRED_FILES[$SLURM_ARRAY_TASK_ID]}' + "\n"
 
@@ -132,24 +126,29 @@ def bash_header(args):
         # No file pattern means this degenerates into an sarray with only one index
         header += '#SBATCH --array=0-0'
 
-    header +=  f'''\
+    if args.file_pattern:
+        header += f"FILES=({' '.join(file_names)})\n\n"
+        header += 'FILE=${FILES[$SLURM_ARRAY_TASK_ID]}' + "\n"
+
+    header += f'''\
 
 # list all loaded modules
 module list
 '''
     return header
 
+
 # Create the text for a batch script
 def batch_code(args):
 
     # Add batch header
-    code = bash_header(args)
+    code = sbatch_header(args)
     code += "\n"
 
     # Add body to code
 
     # separate statements into separate lines
-    lines = re.sub(r'\s*;\s*',"\n",args.command)
+    lines = re.sub(r'\s*;\s*', "\n", args.command)
 
     code += lines
 
@@ -158,22 +157,82 @@ def batch_code(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create shell scripts that process whole directories of files using SLURM arrays. Also works for paired files (like paired-end FASTQ files).')
-    parser.add_argument('--job',            type=str, help='Job name (only alphanumeric, dash, or underscore allowed)',required=True)
-    parser.add_argument('--command',        type=str, help='Command to execute. MUST BE IN SINGLE QUOTES. Multiple commands should be separated by semicolons (;).',required=True)
-    parser.add_argument('--cpu',            type=int, help='Number of CPU cores to use (default: 1)', default=1)
-    parser.add_argument('--mem',            type=str, help='Total RAM to allocate (default: "10G")', default='10G')
-    parser.add_argument('--time',           type=str, help='Time limit (default: "1-00:00:00", meaning 1 day, 0 hours, 00 minutes, 00 seconds)', default='1-00:00:00')
-    parser.add_argument('--partition',      type=str, help='partition to use', default='BioCompute')
-    parser.add_argument('--job-files-dir',  type=str, help='job log directory (default: "job_files.dir")', default='job_files.dir')
-
-    parser.add_argument('--dependency',   type=str, help='list of jobs that must finish before this one starts')
-    parser.add_argument('--file-pattern', type=str,
-            help='Pattern of files to include in sarray. With this option, you can use $FILE in your script to refer to a file. (Required if --paired_file_pattern is used)',
-            required=any(re.search('paired-file-pattern',argument) for argument in sys.argv)
+    parser.add_argument(
+        '--job',
+        type=str,
+        help='Job name (only alphanumeric, dash, or underscore allowed)',
+        required=True
     )
-    parser.add_argument('--paired-file-pattern', type=str,  help='Pattern of paired files to include in sarray (use $PAIRED_FILE in your script to refer to a paired file')
-    parser.add_argument('--run', help="Run script immediately after creating it.", action='store_true')
-    parser.add_argument('--simultaneous',        type=int,  help='Number of simultaneous jobs to allow to run at the same time')
+    parser.add_argument(
+        '--command',
+        type=str,
+        help='Command to execute. MUST BE IN SINGLE QUOTES. Multiple commands should be separated by semicolons (;).',
+        default='ls'
+    )
+    parser.add_argument(
+            '--cpu',
+            type=int,
+            help='Number of CPU cores to use (default: 1)',
+            default=1
+    )
+    parser.add_argument(
+            '--mem',
+            type=str,
+            help='Total RAM to allocate (default: "10G")',
+            default='10G'
+    )
+    parser.add_argument(
+            '--time',
+            type=str,
+            help='Time limit (default: "1-00:00:00", meaning 1 day, 0 hours, 00 minutes, 00 seconds)',
+            default='1-00:00:00'
+    )
+    parser.add_argument(
+            '--partition',
+            type=str,
+            help='partition to use',
+            default='BioCompute'
+    )
+    parser.add_argument(
+            '--job-files-dir',
+            type=str,
+            help='job log directory (default: "job_files.dir")',
+            default='job_files.dir'
+    )
+    parser.add_argument(
+            '--dependency',
+            type=str,
+            help='list of jobs that must finish before this one starts'
+    )
+    parser.add_argument(
+            '--file-pattern',
+            type=str,
+            help='Pattern of files to include in sarray. With this option, you can use $FILE in your script to refer to a file. (Required if --paired-pattern is used)',
+            required=any(
+                re.search('paired-pattern', arg) for arg in sys.argv
+            )
+    )
+    parser.add_argument(
+            '--paired-pattern',
+            type=str,
+            help='Pattern of paired files to include in sarray (use $PAIRED_FILE in your script to refer to a paired file'
+    )
+    parser.add_argument(
+            '--run',
+            help="Run script immediately after creating it.",
+            action='store_true'
+    )
+    parser.add_argument(
+            '--simultaneous',
+            type=int,
+            help='Number of simultaneous jobs to allow to run at the same time'
+    )
+    parser.add_argument(
+            '--exe',
+            type=str,
+            help='Executable used to run the script. Defaults to "bash". Allowed options include "bash" and "perl"',
+            default='bash'
+    )
 
     args = parser.parse_args()
 
@@ -190,5 +249,5 @@ if __name__ == '__main__':
     # Run batch file (if requested)
     if args.run:
 
-        output = subprocess.run(['sbatch', job_script_name],stdout=subprocess.PIPE)
+        output = subprocess.run(['sbatch', job_script_name], stdout=subprocess.PIPE)
         print(output.stdout.decode('utf-8'))

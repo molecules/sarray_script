@@ -20,7 +20,7 @@ my $test2 = start { # Test paired files
 
         my $job = 'test_job';
 
-        my $raw_job_id = qx{ ../../bin/sarray_script --time=00:02:00 --run --file-pattern='*_R1_001.fastq' --paired-file-pattern='*_R2_001.fastq' --job=get_seqs --command='awk "\{if (FNR % 4 == 2) print\}" $FILE > forward.$SLURM_ARRAY_TASK_ID.seqs; awk "\{if (FNR % 4 == 2) print\}" $PAIRED_FILE > reverse.$SLURM_ARRAY_TASK_ID.seqs; '};
+        my $raw_job_id = qx{ ../../bin/sarray_script --time=00:02:00 --run --file-pattern='*_R1_001.fastq' --paired-pattern='*_R2_001.fastq' --job=get_seqs --command='awk "\{if (FNR % 4 == 2) print\}" $FILE > forward.$SLURM_ARRAY_TASK_ID.seqs; awk "\{if (FNR % 4 == 2) print\}" $PAIRED_FILE > reverse.$SLURM_ARRAY_TASK_ID.seqs; '};
         my $job_id     = get_jobid($raw_job_id);
         my $wait_step  = qqx{ sbatch --partition=BioCompute,Lewis --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
 
@@ -82,7 +82,7 @@ my $test4 = start { # Test prefix extraction
 
         my $job = 'test4';
 
-        my $raw_job_id = qx{ ../../bin/sarray_script --time=00:02:00 --run --file-pattern='*_R1_001.fastq' --paired-file-pattern='*_R2_001.fastq' --job=check_prefixes --command='echo "$FILE_PREFIX" > temp_prefix_$FILE_PREFIX.txt'};
+        my $raw_job_id = qx{ ../../bin/sarray_script --time=00:02:00 --run --file-pattern='*_R1_001.fastq' --paired-pattern='*_R2_001.fastq' --job=check_prefixes --command='echo "$FILE_PREFIX" > temp_prefix_$FILE_PREFIX.txt'};
         my $job_id     = get_jobid($raw_job_id);
         my $wait_step  = qqx{ sbatch --partition=BioCompute,Lewis --output='wait.o_%j' --wait --dependency=$job_id --wrap='echo "Finished all jobs: ($job_id)"'};
 

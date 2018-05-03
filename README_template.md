@@ -17,11 +17,10 @@ VERSION-PLACEHOLDER
     sarray_script --cpu=32 --file-pattern='*.txt' --job=pigz_files --command='pigz --processes 32 $FILE'
 
     # Given A_header.txt, A_body.txt, B_header.txt, and B_body.text, you could do the following  
-    sarray_script --run --file-pattern='*_header.txt' --paired-file-pattern='*_body.txt' --job=combine_files --command='cat $FILE $PAIRED_FILE > $FILE_PREFIX.doc.txt'
+    sarray_script --run --file-pattern='*_header.txt' --paired-pattern='*_body.txt' --job=combine_files --command='cat $FILE $PAIRED_FILE > $FILE_PREFIX.doc.txt'
 
     # Then for the bioinformaticians out there, work on those paired-end sequences:
-    sarray_script --file-pattern='*R1*' --paired-file-pattern='*R2*' --job=trim_files --command='cutadapt -a AGAT... -A AGAT... --output=${FILE_PREFIX}_for.fastq.gz --paired-output=${FILE_PREFIX}_rev.fastq.gz'
-
+    sarray_script --file-pattern='*R1*' --paired-pattern='*R2*' --job=trim_files --command='cutadapt -a AGAT... -A AGAT... --output=${FILE_PREFIX}_for.fastq.gz --paired-output=${FILE_PREFIX}_rev.fastq.gz'
 
 
 ## Processing multiple files in parallel
@@ -48,7 +47,7 @@ sbatch script created by `sarray_script` if the given parameters are used:
 Available with --file-pattern flag:  
 `$FILE` File processed by a single Slurm array task .  
 
-Available with --paired-file-pattern flag:  
+Available with --paired-pattern flag:  
 `$PAIRED_FILE` "Paired" file processed by the same Slurm array task as the file represented by "$FILE".  
 `$FILE_PREFIX` It is assumed that $FILE and $PAIRED_FILE have a common prefix that will be unique in the directory. That prefix is computed and provided as `$FILE_PREFIX`. Enforcing uniqueness of this "common prefix" has not been done. The following situation would work:  
 
@@ -72,7 +71,7 @@ Given these files:
 
 The following script would combine them:  
 
-    sarray_script --run --file-pattern='*_A.txt' --paired-file-pattern='*_B.txt' --job=combine_files --command='cat $FILE $PAIRED_FILE > $FILE_PREFIX.combined.txt'
+    sarray_script --run --file-pattern='*_A.txt' --paired-pattern='*_B.txt' --job=combine_files --command='cat $FILE $PAIRED_FILE > $FILE_PREFIX.combined.txt'
 
 When all of the jobs finished running, the following would be the resulting files:  
     foo.combined.txt
@@ -93,13 +92,13 @@ This command line will "trim" these FASTQ files (Your adapters may be
 different. Please verify instead of blindly copying and pasting this
 code):
 
-    sarray_script --file-pattern='*R1*' --paired-file-pattern='*R2*' --job=trim_files --command='cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA --output=${FILE_PREFIX}_for.fastq.gz --paired-output=${FILE_PREFIX}_rev.fastq.gz'
+    sarray_script --file-pattern='*R1*' --paired-pattern='*R2*' --job=trim_files --command='cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA --output=${FILE_PREFIX}_for.fastq.gz --paired-output=${FILE_PREFIX}_rev.fastq.gz'
 
 Or using backslashed newlines to make the command line seem more sane:
 
     sarray_script \
         --file-pattern='*R1*' \
-        --paired-file-pattern='*R2*' \
+        --paired-pattern='*R2*' \
         --job=trim_files \
         --command='cutadapt \
                     -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC \
@@ -121,14 +120,14 @@ Take advantage of SLURM environment variables
 Create a dummy script with a simple command (e.g. 'ls') and then modify the
 script `trim_files.sbatch` later to enter the actual commands:
 
-    sarray_script --file-pattern='*R1*' --paired-file-pattern='*R2*' --job=trim_files --command='ls'
+    sarray_script --file-pattern='*R1*' --paired-pattern='*R2*' --job=trim_files --command='ls'
 
 Even if you don't mention `$FILE` on the command line, it will still be
 available inside your script if you used the `--file-pattern` option.
 
 Even if you don't mentioned `$PAIRED_FILE` or `$FILE_PREFIX` on the command
 line, they will still be available inside your script if you used the
-`--paired-file-pattern` option.
+`--paired-pattern` option.
 
 # DEPENDENCIES
 
@@ -140,11 +139,11 @@ slurm (https://slurm.schedmd.com/)
 
 # DIAGNOSTICS
 
-If `--file-pattern` and `--paired-file-pattern` are both used but
+If `--file-pattern` and `--paired-pattern` are both used but
 they generate different numbers of files, then the following error will be
 seen:
 
-    ERROR: --file-pattern and --paired-file-pattern produce
+    ERROR: --file-pattern and --paired-pattern produce
            different numbers of files. List of 'File name (paired file name)':
 
 Followed by a list of the files that were assumed to be the pairs and which
@@ -160,12 +159,12 @@ For example, given these files:
 
 With this command line:
 
-    sarray_script --file-pattern='*.A.txt' --paired-file-pattern='*.B.txt' --command='ls' --job='test'
+    sarray_script --file-pattern='*.A.txt' --paired-pattern='*.B.txt' --command='ls' --job='test'
 
 Gives the following error:
 
     ERROR:
-    --file_pattern='*.A.txt' and --paired_file_pattern='*.B.txt'
+    --file-pattern='*.A.txt' and --paired-pattern='*.B.txt'
     produce  different numbers of files:'
 
             file_1.A.txt (file_1.B.txt)
