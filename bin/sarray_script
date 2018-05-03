@@ -48,7 +48,6 @@ def sorted_file_names_matching(pattern):
 def common_header(args):
 
     header = f'''\
-#!/bin/env bash
 #SBATCH --job-name {args.job}
 #SBATCH --mem {args.mem}
 #SBATCH --cpus-per-task {args.cpu}
@@ -71,7 +70,8 @@ def common_header(args):
 
 
 def bash_header(args):
-    header = common_header(args)
+    header = "#!/bin/env bash\n"
+    header += common_header(args)
 
     if args.file_pattern:
         file_names = sorted_file_names_matching(args.file_pattern)
