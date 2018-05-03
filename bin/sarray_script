@@ -156,7 +156,12 @@ def batch_code(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Create shell scripts that process whole directories of files using SLURM arrays. Also works for paired files (like paired-end FASTQ files).')
+    parser = argparse.ArgumentParser(
+                description='Create shell scripts that process whole ' +
+                            'directories of files using SLURM arrays.  ' +
+                            'Also works for paired files (like paired-end ' +
+                            'FASTQ files).'
+             )
     parser.add_argument(
         '--job',
         type=str,
@@ -166,7 +171,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '--command',
         type=str,
-        help='Command to execute. MUST BE IN SINGLE QUOTES. Multiple commands should be separated by semicolons (;).',
+        help='Command to execute. MUST BE IN SINGLE QUOTES. Multiple ' +
+             'commands should be separated by semicolons (;).',
         default='ls'
     )
     parser.add_argument(
@@ -184,7 +190,8 @@ if __name__ == '__main__':
     parser.add_argument(
             '--time',
             type=str,
-            help='Time limit (default: "1-00:00:00", meaning 1 day, 0 hours, 00 minutes, 00 seconds)',
+            help='Time limit (default: "1-00:00:00", meaning 1 day, 0 hours, ' +
+                 '00 minutes, 00 seconds)',
             default='1-00:00:00'
     )
     parser.add_argument(
@@ -207,7 +214,9 @@ if __name__ == '__main__':
     parser.add_argument(
             '--file-pattern',
             type=str,
-            help='Pattern of files to include in sarray. With this option, you can use $FILE in your script to refer to a file. (Required if --paired-pattern is used)',
+            help='Pattern of files to include in sarray. With this option, ' +
+                 'you can use $FILE in your script to refer to a file. ' +
+                 '(Required if --paired-pattern is used)',
             required=any(
                 re.search('paired-pattern', arg) for arg in sys.argv
             )
@@ -215,7 +224,8 @@ if __name__ == '__main__':
     parser.add_argument(
             '--paired-pattern',
             type=str,
-            help='Pattern of paired files to include in sarray (use $PAIRED_FILE in your script to refer to a paired file'
+            help='Pattern of paired files to include in sarray (use ' +
+                 '$PAIRED_FILE in your script to refer to a paired file'
     )
     parser.add_argument(
             '--run',
@@ -230,7 +240,8 @@ if __name__ == '__main__':
     parser.add_argument(
             '--exe',
             type=str,
-            help='Executable used to run the script. Defaults to "bash". Allowed options include "bash" and "perl"',
+            help='Executable used to run the script. Defaults to "bash". ' +
+                 'Allowed options include "bash" and "perl"',
             default='bash'
     )
 
@@ -249,5 +260,8 @@ if __name__ == '__main__':
     # Run batch file (if requested)
     if args.run:
 
-        output = subprocess.run(['sbatch', job_script_name], stdout=subprocess.PIPE)
+        output = subprocess.run(
+                    ['sbatch', job_script_name],
+                    stdout=subprocess.PIPE
+                 )
         print(output.stdout.decode('utf-8'))
